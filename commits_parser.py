@@ -7,6 +7,8 @@ EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 FIELDNAMES = ('repository name', 'author name', 'author login', 'author email', 'date and time', 'changed files', 'commit id', 'branch')
+GOOGLE_MAX_CELL_LEN = 50000
+
 
 def log_commit_to_csv(info, csv_name):
     with open(csv_name, 'a', newline='') as file:
@@ -39,8 +41,11 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
                 continue
             if commit.commit is not None:
                 nvl = lambda val: val or EMPTY_FIELD
-                commit_data = [repository.full_name, commit.commit.author.name, nvl(commit.author.login if commit.author else None), nvl(commit.commit.author.email),
-                               commit.commit.author.date, '; '.join([file.filename for file in commit.files]), commit.commit.sha, branch]
+                changed_files = '; '.join([file.filename for file in commit.files])
+                if len(changed_files) > GOOGLE_MAX_CELL_LEN:
+                    changed_files = changed_files[:GOOGLE_MAX_CELL_LEN]
+                commit_data = [repository.full_name, commit.commit.author.name, nvl(commit.author.login), nvl(commit.commit.author.email),
+                               commit.commit.author.date, changed_files, commit.commit.sha, branch]
                 info = dict(zip(FIELDNAMES, commit_data))
 
                 log_commit_to_csv(info, csv_name)
