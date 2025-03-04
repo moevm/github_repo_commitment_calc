@@ -1,92 +1,282 @@
-import argparse
+from abc import ABC, abstractmethod
 from datetime import datetime
-import pytz
+from typing import List, Dict, Optional
+import logging
 
-import git_logger
-import export_sheets
-import commits_parser
-import pull_requests_parser
-import issues_parser
-import invites_parser
-import wikipars
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--invites", help="print pending invites", action="store_true")
-    parser.add_argument("-c", "--commits", help="log commits", action="store_true")
-    parser.add_argument("-p", "--pull_requests", help="log pull requests", action="store_true")
-    parser.add_argument("-i", "--issues", help="log issues", action="store_true")
-    parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
-    parser.add_argument("--forks_include", help="logging data from forks", action="store_true")
-    parser.add_argument("-e", "--export_google_sheets", help="export table to google sheets", action="store_true")
-    parser.add_argument('-t', '--token', type=str, required=True, help='token github account')
-    parser.add_argument('-l', '--list', type=str, required=True, help='Path to the file containing the list of repositories. Repositories should be separated by a line break. Names should be in the format <organization or owner>/<name> ')
-    parser.add_argument("--download_repos", type=str, help="path to downloaded repositories", default='./')
-    parser.add_argument('-o', '--out', type=str, required=True, help='output filename')
-    parser.add_argument("--pr_comments", help="log comments for PR", action="store_true")
-    parser.add_argument('-s', '--start', type=str, required=False, help='start time', default='2000/01/01-00:00:00')
-    parser.add_argument('-f', '--finish', type=str, required=False, help='finish time', default='2400/01/01-00:00:00')
-    parser.add_argument('-b', '--branch', type=str, required=False, help='branch to select commits, by default use "default" repository branch, use "all" to get all commits from all branches', default=None)
-    parser.add_argument('--google_token', type=str, required=False, help='Specify path to google token file')
-    parser.add_argument('--table_id', type=str, required=False,
-                        help='Specify Google sheet document id (can find in url)')
-    parser.add_argument('--sheet_id', type=str, required=False,
-                        help='Specify title for a sheet in a document in which data will be printed')
-    args = parser.parse_args()
-    
-    if args.export_google_sheets:
-        for action in parser._actions:
-            if action.dest == 'google_token':
-                action.required = True
-            if action.dest == 'table_id':
-                action.required = True
-            if action.dest == 'sheet_id':
-                action.required = True
-    return parser.parse_args()
+# Модельные классы
+class Repository:
+    def __init__(self, id: str, name: str, url: str):
+        self.id = id
+        self.name = name
+        self.url = url
 
+    def __repr__(self):
+        return f"Repository(id={self.id}, name={self.name}, url={self.url})"
 
-def parse_time(datetime_str):
-    start = datetime_str[0].split('/') + datetime_str[1].split(':') if len(datetime_str) == 2 \
-        else datetime_str[0].split('/') + ['00', '00', '00']
-    start = [int(i) for i in start]
-    start_datetime = datetime(year=start[0], month=start[1], day=start[2], hour=start[3], minute=start[4],
-                              second=start[5])
-    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))
+class Commit:
+    def __init__(self, id: str, message: str, author: 'Contributor', date: datetime):
+        self.id = id
+        self.message = message
+        self.author = author
+        self.date = date
 
+    def __repr__(self):
+        return f"Commit(id={self.id}, message={self.message}, author={self.author}, date={self.date})"
 
-def main():
-    args = parse_args()
-    token = args.token
-    repositories = args.list
-    csv_name = args.out
-    path_drepo = args.download_repos
-    fork_flag = args.forks_include
-    log_pr_comments = args.pr_comments
-    start, finish = None, None
+class Contributor:
+    def __init__(self, username: str, email: str):
+        self.username = username
+        self.email = email
 
-    try:
-        client = git_logger.login(token=token)
-    except Exception as e:
-        print(e)
-    else:
-        working_repos = git_logger.get_next_repo(client, repositories)
-        if args.start:
-            start = parse_time(args.start.split('-'))
-        if args.finish:
-            finish = parse_time(args.finish.split('-'))
-        if args.commits:
-            commits_parser.log_commits(client, working_repos, csv_name, start, finish, args.branch, fork_flag)
-        if args.pull_requests:
-            pull_requests_parser.log_pull_requests(client, working_repos, csv_name, token, start, finish, fork_flag, log_pr_comments)
-        if args.issues:
-            issues_parser.log_issues(client, working_repos, csv_name, token, start, finish, fork_flag)
-        if args.invites:
-            invites_parser.log_invitations(client, working_repos, csv_name)
-        if args.wikis:
-            wikipars.wikiparser(client, repositories, path_drepo, csv_name)
-        if args.export_google_sheets:
-            export_sheets.write_data_to_table(csv_name, args.google_token, args.table_id, args.sheet_id)
+    def __repr__(self):
+        return f"Contributor(username={self.username}, email={self.email})"
 
+class Issue:
+    def __init__(self, id: str, title: str, author: Contributor, state: str):
+        self.id = id
+        self.title = title
+        self.author = author
+        self.state = state
 
-if __name__ == '__main__':
-    main()
+    def __repr__(self):
+        return f"Issue(id={self.id}, title={self.title}, author={self.author}, state={self.state})"
+
+class PullRequest:
+    def __init__(self, id: str, title: str, author: Contributor, state: str):
+        self.id = id
+        self.title = title
+        self.author = author
+        self.state = state
+
+    def __repr__(self):
+        return f"PullRequest(id={self.id}, title={self.title}, author={self.author}, state={self.state})"
+
+class WikiPage:
+    def __init__(self, title: str, content: str):
+        self.title = title
+        self.content = content
+
+    def __repr__(self):
+        return f"WikiPage(title={self.title}, content={self.content[:50]}...)"  # Ограничиваем вывод content для удобства
+
+# Интерфейс API
+class IRepositoryAPI(ABC):
+    @abstractmethod
+    def get_repository(self, id: str) -> Optional[Repository]:
+        """Получить репозиторий по его идентификатору."""
+        pass
+
+    @abstractmethod
+    def get_commits(self, repo: Repository) -> List[Commit]:
+        """Получить список коммитов для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_contributors(self, repo: Repository) -> List[Contributor]:
+        """Получить список контрибьюторов для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_issues(self, repo: Repository) -> List[Issue]:
+        """Получить список issues для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+        """Получить список pull requests для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+        """Получить список wiki-страниц для репозитория."""
+        pass
+
+# Реализация для GitHub
+class GitHubRepoAPI(IRepositoryAPI):
+    def __init__(self, client):
+        self.client = client
+
+    def get_repository(self, id: str) -> Optional[Repository]:
+        try:
+            repo = self.client.get_repo(id)
+            return Repository(repo.full_name, repo.name, repo.html_url)
+        except Exception as e:
+            logging.error(f"Failed to get repository {id} from GitHub: {e}")
+            return None
+
+    def get_commits(self, repo: Repository) -> List[Commit]:
+        try:
+            commits = self.client.get_repo(repo.id).get_commits()
+            return [
+                Commit(
+                    c.sha,
+                    c.commit.message,
+                    Contributor(c.author.login if c.author else "unknown", c.commit.author.email),
+                    c.commit.author.date
+                ) for c in commits
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get commits from GitHub for repo {repo.name}: {e}")
+            return []
+
+    def get_contributors(self, repo: Repository) -> List[Contributor]:
+        try:
+            contributors = self.client.get_repo(repo.id).get_contributors()
+            return [Contributor(c.login, c.email or "") for c in contributors]
+        except Exception as e:
+            logging.error(f"Failed to get contributors from GitHub for repo {repo.name}: {e}")
+            return []
+
+    def get_issues(self, repo: Repository) -> List[Issue]:
+        try:
+            issues = self.client.get_repo(repo.id).get_issues(state='all')
+            return [
+                Issue(
+                    i.number,
+                    i.title,
+                    Contributor(i.user.login, i.user.email or ""),
+                    i.state
+                ) for i in issues
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
+            return []
+
+    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+        try:
+            pulls = self.client.get_repo(repo.id).get_pulls(state='all')
+            return [
+                PullRequest(
+                    p.number,
+                    p.title,
+                    Contributor(p.user.login, p.user.email or ""),
+                    p.state
+                ) for p in pulls
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
+            return []
+
+    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+        # GitHub API не поддерживает прямое получение wiki-страниц
+        return []
+
+# Реализация для Forgejo
+class ForgejoRepoAPI(IRepositoryAPI):
+    def __init__(self, client):
+        self.client = client
+
+    def get_repository(self, id: str) -> Optional[Repository]:
+        try:
+            owner, repo_name = id.split('/')
+            repo = self.client.repo_get(owner, repo_name)
+            return Repository(repo['id'], repo['name'], repo['html_url'])
+        except Exception as e:
+            logging.error(f"Failed to get repository {id} from Forgejo: {e}")
+            return None
+
+    def get_commits(self, repo: Repository) -> List[Commit]:
+        try:
+            owner, repo_name = repo.id.split('/')
+            commits = self.client.repo_list_commits(owner, repo_name)
+            return [
+                Commit(
+                    c['sha'],
+                    c['message'],
+                    Contributor(c['author']['username'], c['author']['email']),
+                    datetime.fromisoformat(c['date'])
+                ) for c in commits
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get commits from Forgejo for repo {repo.name}: {e}")
+            return []
+
+    def get_contributors(self, repo: Repository) -> List[Contributor]:
+        try:
+            owner, repo_name = repo.id.split('/')
+            contributors = self.client.repo_list_contributors(owner, repo_name)
+            return [Contributor(c['username'], c['email']) for c in contributors]
+        except Exception as e:
+            logging.error(f"Failed to get contributors from Forgejo for repo {repo.name}: {e}")
+            return []
+
+    def get_issues(self, repo: Repository) -> List[Issue]:
+        try:
+            owner, repo_name = repo.id.split('/')
+            issues = self.client.repo_list_issues(owner, repo_name)
+            return [
+                Issue(
+                    i['number'],
+                    i['title'],
+                    Contributor(i['user']['username'], i['user']['email']),
+                    i['state']
+                ) for i in issues
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get issues from Forgejo for repo {repo.name}: {e}")
+            return []
+
+    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+        try:
+            owner, repo_name = repo.id.split('/')
+            pulls = self.client.repo_list_pull_requests(owner, repo_name)
+            return [
+                PullRequest(
+                    p['number'],
+                    p['title'],
+                    Contributor(p['user']['username'], p['user']['email']),
+                    p['state']
+                ) for p in pulls
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get pull requests from Forgejo for repo {repo.name}: {e}")
+            return []
+
+    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+        try:
+            owner, repo_name = repo.id.split('/')
+            wiki_pages = self.client.repo_list_wiki_pages(owner, repo_name)
+            return [WikiPage(page['title'], page['content']) for page in wiki_pages]
+        except Exception as e:
+            logging.error(f"Failed to get wiki pages from Forgejo for repo {repo.name}: {e}")
+            return []
+
+# Фабрика для создания API
+class RepositoryFactory:
+    @staticmethod
+    def create_api(source: str, client) -> IRepositoryAPI:
+        if client is None:
+            raise ValueError("Client cannot be None")
+        if source == 'github':
+            return GitHubRepoAPI(client)
+        elif source == 'forgejo':
+            return ForgejoRepoAPI(client)
+        else:
+            raise ValueError(f"Unsupported source: {source}")
+
+# Сервис для расчёта метрик
+class CommitmentCalculator:
+    def __init__(self, api: IRepositoryAPI):
+        self.api = api
+
+    def calculate(self, repo: Repository) -> Dict[str, int]:
+        if not repo:
+            return {}
+        try:
+            commits = self.api.get_commits(repo)
+            if not commits:
+                return {}
+            result = {}
+            for commit in commits:
+                author = commit.author.username
+                result[author] = result.get(author, 0) + 1
+            return result
+        except Exception as e:
+            logging.error(f"Failed to calculate commitment for repo {repo.name}: {e}")
+            return {}
