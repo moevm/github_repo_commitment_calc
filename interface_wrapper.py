@@ -65,6 +65,14 @@ class WikiPage:
     def __repr__(self):
         return f"WikiPage(title={self.title}, content={self.content[:50]}...)"  # Ограничиваем вывод content для удобства
 
+class Branch:
+    def __init__(self, name: str, last_commit: Optional[Commit] = None):
+        self.name = name
+        self.last_commit = last_commit
+
+    def __repr__(self):
+        return f"Branch(name={self.name}, last_commit={self.last_commit})"
+
 # Интерфейс API
 class IRepositoryAPI(ABC):
     @abstractmethod
@@ -93,9 +101,15 @@ class IRepositoryAPI(ABC):
         pass
 
     @abstractmethod
+    def get_branches(self, repo: Repository) -> List[Branch]:
+        """Получить список веток для репозитория."""
+        pass
+    
+    @abstractmethod
     def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
         """Получить список wiki-страниц для репозитория."""
         pass
+   
 
 # Фабрика для создания API
 class RepositoryFactory:
