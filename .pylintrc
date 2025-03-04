@@ -1,0 +1,76 @@
+[BASIC]
+
+argument-naming-style=snake_case
+attr-naming-style=snake_case
+
+bad-names=
+    foo,
+    bar,
+    baz,
+    toto,
+    tutu,
+    tata
+
+class-const-naming-style=UPPER_CASE
+class-naming-style=PascalCase
+const-naming-style=UPPER_CASE
+docstring-min-length=-1
+function-naming-style=snake_case
+method-naming-style=snake_case
+module-naming-style=snake_case
+variable-naming-style=snake_case
+
+
+[MESSAGES CONTROL]
+disable=
+    fixme,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    consider-using-dict-items,
+    consider-iterating-dictionary,
+    too-few-public-methods,
+    unspecified-encoding,
+    consider-using-enumerate,
+    subprocess-run-check,
+    redefined-outer-name,
+    no-member,
+    unused-argument,
+    protected-access,
+    duplicate-code,
+    missing-timeout,
+    line-too-long,
+    cyclic-import # это сложно поправить быстро
+
+enable=
+    import-error,
+    invalid-name,
+    unused-import,
+    missing-final-newline,
+    wrong-import-order,
+    wildcard-import,
+    trailing-whitespace,
+    unused-wildcard-import,
+    trailing-newlines,
+    redefined-builtin,
+    singleton-comparison,
+    unused-variable,
+    no-else-return,
+    f-string-without-interpolation,
+    ungrouped-imports,
+    too-many-arguments,
+    consider-using-with,
+    inconsistent-return-statements,
+    simplifiable-condition,
+    reimported,
+    super-with-arguments
+
+[FORMAT]
+max-line-length=150
+max-module-lines=1000
+
+[DESIGN]
+max-args=9
+max-branches=12
+max-returns=6
+max-attributes=9
