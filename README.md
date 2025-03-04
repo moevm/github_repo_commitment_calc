@@ -42,7 +42,10 @@ python3 main.py --invites [-t, --token] token (github токен вместо to
 ```commandline
 python3 main.py [-w, --wikis] [-t, --token] token (github токен вместо token) [-l, --list]  list (list - строка пути к txt файлу со списком репозиториев)  --dowland_repos path_drepo (path_drepo - строка пути к директории, где сохраняются вики-репозитории) [-o, --out] out (out - название csv файла, в который будут помещены все логи)
 ```
-
+6. Логирование contributors
+```commandline
+python3 main.py [--contributors] [-t, --token] token (github токен вместо token) [-l, --list]  list (list - строка пути к txt файлу со списком репозиториев) [-o, --out] out (out - название csv файла, в который будут помещены все логи)
+```
 
 
 ##  Получение токена для работы с Google таблицей:
