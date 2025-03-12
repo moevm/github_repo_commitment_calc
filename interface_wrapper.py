@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Dict, Optional
+from dataclasses import dataclass
 import logging
 
 # Настройка логирования
@@ -10,103 +10,82 @@ logging.basicConfig(
 )
 
 # Модельные классы
+@dataclass
 class Repository:
-    def __init__(self, id: str, name: str, url: str):
-        self.id = id
-        self.name = name
-        self.url = url
+    _id: str
+    name: str
+    url: str
 
-    def __repr__(self):
-        return f"Repository(id={self.id}, name={self.name}, url={self.url})"
-
-class Commit:
-    def __init__(self, id: str, message: str, author: 'Contributor', date: datetime):
-        self.id = id
-        self.message = message
-        self.author = author
-        self.date = date
-
-    def __repr__(self):
-        return f"Commit(id={self.id}, message={self.message}, author={self.author}, date={self.date})"
-
+@dataclass
 class Contributor:
-    def __init__(self, username: str, email: str):
-        self.username = username
-        self.email = email
+    username: str
+    email: str
 
-    def __repr__(self):
-        return f"Contributor(username={self.username}, email={self.email})"
+@dataclass
+class Commit:
+    _id: str
+    message: str
+    author: Contributor
+    date: datetime
 
+@dataclass
 class Issue:
-    def __init__(self, id: str, title: str, author: Contributor, state: str):
-        self.id = id
-        self.title = title
-        self.author = author
-        self.state = state
+    _id: str
+    title: str
+    author: Contributor
+    state: str
 
-    def __repr__(self):
-        return f"Issue(id={self.id}, title={self.title}, author={self.author}, state={self.state})"
-
+@dataclass
 class PullRequest:
-    def __init__(self, id: str, title: str, author: Contributor, state: str):
-        self.id = id
-        self.title = title
-        self.author = author
-        self.state = state
+    _id: str
+    title: str
+    author: Contributor
+    state: str
 
-    def __repr__(self):
-        return f"PullRequest(id={self.id}, title={self.title}, author={self.author}, state={self.state})"
-
+@dataclass
 class WikiPage:
-    def __init__(self, title: str, content: str):
-        self.title = title
-        self.content = content
+    title: str
+    content: str
 
-    def __repr__(self):
-        return f"WikiPage(title={self.title}, content={self.content[:50]}...)"  # Ограничиваем вывод content для удобства
-
+@dataclass
 class Branch:
-    def __init__(self, name: str, last_commit: Optional[Commit] = None):
-        self.name = name
-        self.last_commit = last_commit
-
-    def __repr__(self):
-        return f"Branch(name={self.name}, last_commit={self.last_commit})"
+    name: str
+    last_commit: Commit | None
 
 # Интерфейс API
 class IRepositoryAPI(ABC):
     @abstractmethod
-    def get_repository(self, id: str) -> Optional[Repository]:
+    def get_repository(self, id: str) -> Repository | None:
         """Получить репозиторий по его идентификатору."""
         pass
 
     @abstractmethod
-    def get_commits(self, repo: Repository) -> List[Commit]:
+    def get_commits(self, repo: Repository) -> list[Commit]:
         """Получить список коммитов для репозитория."""
         pass
 
     @abstractmethod
-    def get_contributors(self, repo: Repository) -> List[Contributor]:
+    def get_contributors(self, repo: Repository) -> list[Contributor]:
         """Получить список контрибьюторов для репозитория."""
         pass
 
     @abstractmethod
-    def get_issues(self, repo: Repository) -> List[Issue]:
+    def get_issues(self, repo: Repository) -> list[Issue]:
         """Получить список issues для репозитория."""
         pass
 
     @abstractmethod
-    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+    def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         """Получить список pull requests для репозитория."""
         pass
 
     @abstractmethod
-    def get_branches(self, repo: Repository) -> List[Branch]:
+    def get_branches(self, repo: Repository) -> list[Branch]:
         """Получить список веток для репозитория."""
         pass
     
     @abstractmethod
-    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
         """Получить список wiki-страниц для репозитория."""
         pass
    
@@ -129,7 +108,7 @@ class CommitmentCalculator:
     def __init__(self, api: IRepositoryAPI):
         self.api = api
 
-    def calculate(self, repo: Repository) -> Dict[str, int]:
+    def calculate(self, repo: Repository) -> dict[str, int]:
         if not repo:
             return {}
         try:
