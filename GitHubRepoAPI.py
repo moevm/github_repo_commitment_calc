@@ -1,96 +1,16 @@
-from github import Github
-from typing import Optional, List
-import logging
-from datetime import datetime
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-
-# Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+from interface_wrapper import (
+    logging,
+    Repository,
+    Contributor,
+    Commit,
+    Issue,
+    PullRequest,
+    WikiPage,
+    Branch,
+    IRepositoryAPI,
 )
-
-# Модельные классы
-@dataclass
-class Repository:
-    _id: str
-    name: str
-    url: str
-
-@dataclass
-class Contributor:
-    username: str
-    email: str
-
-@dataclass
-class Commit:
-    _id: str
-    message: str
-    author: Contributor
-    date: datetime
-
-@dataclass
-class Issue:
-    _id: int
-    title: str
-    author: Contributor
-    state: str
-
-@dataclass
-class PullRequest:
-    _id: int
-    title: str
-    author: Contributor
-    state: str
-
-@dataclass
-class WikiPage:
-    title: str
-    content: str
-
-@dataclass
-class Branch:
-    name: str
-    last_commit: Commit | None
-
-# Интерфейс API
-class IRepositoryAPI(ABC):
-    @abstractmethod
-    def get_repository(self, id: str) -> Repository | None:
-        """Получить репозиторий по его идентификатору."""
-        pass
-
-    @abstractmethod
-    def get_commits(self, repo: Repository) -> list[Commit]:
-        """Получить список коммитов для репозитория."""
-        pass
-
-    @abstractmethod
-    def get_contributors(self, repo: Repository) -> list[Contributor]:
-        """Получить список контрибьюторов для репозитория."""
-        pass
-
-    @abstractmethod
-    def get_issues(self, repo: Repository) -> list[Issue]:
-        """Получить список issues для репозитория."""
-        pass
-
-    @abstractmethod
-    def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
-        """Получить список pull requests для репозитория."""
-        pass
-
-    @abstractmethod
-    def get_branches(self, repo: Repository) -> list[Branch]:
-        """Получить список веток для репозитория."""
-        pass
-
-    @abstractmethod
-    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
-        """Получить список wiki-страниц для репозитория."""
-        pass
-
+from typing import Optional, List
+from github import Github
 
 class GitHubRepoAPI(IRepositoryAPI):
     
@@ -100,20 +20,20 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_repository(self, id: str) -> Optional[Repository]:
         try:
             repo = self.client.get_repo(id)
-            return Repository(repo.full_name, repo.name, repo.html_url)
+            return Repository(_id=repo.full_name, name=repo.name, url=repo.html_url)
         except Exception as e:
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
             return None
 
     def get_commits(self, repo: Repository) -> List[Commit]:
         try:
-            commits = self.client.get_repo(repo.id).get_commits()
+            commits = self.client.get_repo(repo._id).get_commits()
             return [
                 Commit(
-                    c.sha,
-                    c.commit.message,
-                    Contributor(c.author.login if c.author else "unknown", c.commit.author.email),
-                    c.commit.author.date
+                    _id=c.sha,
+                    message=c.commit.message,
+                    author=Contributor(c.author.login if c.author else "unknown", c.commit.author.email),
+                    date=c.commit.author.date
                 ) for c in commits
             ]
         except Exception as e:
@@ -122,7 +42,7 @@ class GitHubRepoAPI(IRepositoryAPI):
 
     def get_contributors(self, repo: Repository) -> List[Contributor]:
         try:
-            contributors = self.client.get_repo(repo.id).get_contributors()
+            contributors = self.client.get_repo(repo._id).get_contributors()
             return [Contributor(c.login, c.email or "") for c in contributors]
         except Exception as e:
             logging.error(f"Failed to get contributors from GitHub for repo {repo.name}: {e}")
@@ -130,44 +50,49 @@ class GitHubRepoAPI(IRepositoryAPI):
 
     def get_issues(self, repo: Repository) -> List[Issue]:
         try:
-            issues = self.client.get_repo(repo.id).get_issues(state='all')
+            issues = self.client.get_repo(repo._id).get_issues(state='all')
             return [
                 Issue(
-                    i.number,
-                    i.title,
-                    Contributor(i.user.login, i.user.email or ""),
-                    i.state
+                    _id=i.number,
+                    title=i.title,
+                    author=Contributor(i.user.login, i.user.email or ""),
+                    state=i.state
                 ) for i in issues
             ]
         except Exception as e:
             logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
             return []
-        
 
     def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
         try:
-            pulls = self.client.get_repo(repo.id).get_pulls(state='all')
+            pulls = self.client.get_repo(repo._id).get_pulls(state='all')
             return [
                 PullRequest(
-                    p.number,
-                    p.title,
-                    Contributor(p.user.login, p.user.email or ""),
-                    p.state
+                    _id=p.number,
+                    title=p.title,
+                    author=Contributor(p.user.login, p.user.email or ""),
+                    state=p.state
                 ) for p in pulls
             ]
         except Exception as e:
             logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
             return []
         
+    def get_branches(self, repo: Repository) -> List[Branch]:
+        pass
+
+    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+        pass
+
 
 # Точка входа для тестирования
 if __name__ == "__main__":
-    #клиент GitHub (используйте ваш токен)
+    # Создайте клиент GitHub (используйте ваш токен)
     client = Github("tocken")
     api = GitHubRepoAPI(client)
 
     # Укажите ваш репозиторий 
-    repo_name = "ваш_username/ваш_repo"
+    repo_name = ""
 
     # Получение репозитория
     repo = api.get_repository(repo_name)
