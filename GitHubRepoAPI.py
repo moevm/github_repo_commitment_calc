@@ -1,3 +1,97 @@
+from github import Github
+from typing import Optional, List
+import logging
+from datetime import datetime
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Модельные классы
+@dataclass
+class Repository:
+    _id: str
+    name: str
+    url: str
+
+@dataclass
+class Contributor:
+    username: str
+    email: str
+
+@dataclass
+class Commit:
+    _id: str
+    message: str
+    author: Contributor
+    date: datetime
+
+@dataclass
+class Issue:
+    _id: int
+    title: str
+    author: Contributor
+    state: str
+
+@dataclass
+class PullRequest:
+    _id: int
+    title: str
+    author: Contributor
+    state: str
+
+@dataclass
+class WikiPage:
+    title: str
+    content: str
+
+@dataclass
+class Branch:
+    name: str
+    last_commit: Commit | None
+
+# Интерфейс API
+class IRepositoryAPI(ABC):
+    @abstractmethod
+    def get_repository(self, id: str) -> Repository | None:
+        """Получить репозиторий по его идентификатору."""
+        pass
+
+    @abstractmethod
+    def get_commits(self, repo: Repository) -> list[Commit]:
+        """Получить список коммитов для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_contributors(self, repo: Repository) -> list[Contributor]:
+        """Получить список контрибьюторов для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_issues(self, repo: Repository) -> list[Issue]:
+        """Получить список issues для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
+        """Получить список pull requests для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_branches(self, repo: Repository) -> list[Branch]:
+        """Получить список веток для репозитория."""
+        pass
+
+    @abstractmethod
+    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
+        """Получить список wiki-страниц для репозитория."""
+        pass
+
+
 class GitHubRepoAPI(IRepositoryAPI):
     
     def __init__(self, client):
@@ -64,3 +158,46 @@ class GitHubRepoAPI(IRepositoryAPI):
         except Exception as e:
             logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
             return []
+        
+
+# Точка входа для тестирования
+if __name__ == "__main__":
+    #клиент GitHub (используйте ваш токен)
+    client = Github("tocken")
+    api = GitHubRepoAPI(client)
+
+    # Укажите ваш репозиторий 
+    repo_name = "ваш_username/ваш_repo"
+
+    # Получение репозитория
+    repo = api.get_repository(repo_name)
+    if not repo:
+        print("Repository not found.")
+        exit()
+
+    # Вывод информации о репозитории
+    print(f"Repository: {repo.name}, URL: {repo.url}")
+
+    # Получение коммитов
+    commits = api.get_commits(repo)
+    print(f"Total commits: {len(commits)}")
+    for commit in commits[:10]:  # Выведем первые 10 коммитов
+        print(f"Commit: {commit._id}, Message: {commit.message}, Author: {commit.author.username}")
+
+    # Получение контрибьюторов
+    contributors = api.get_contributors(repo)
+    print(f"Total contributors: {len(contributors)}")
+    for contributor in contributors:
+        print(f"Contributor: {contributor.username}, Email: {contributor.email}")
+
+    # Получение issues
+    issues = api.get_issues(repo)
+    print(f"Total issues: {len(issues)}")
+    for issue in issues[:10]:  # Выведем первые 10 issues
+        print(f"Issue: {issue._id}, Title: {issue.title}, State: {issue.state}")
+
+    # Получение pull requests
+    pulls = api.get_pull_requests(repo)
+    print(f"Total pull requests: {len(pulls)}")
+    for pull in pulls[:10]:  # Выведем первые 10 pull requests
+        print(f"Pull Request: {pull._id}, Title: {pull.title}, State: {pull.state}")
