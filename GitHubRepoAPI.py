@@ -25,3 +25,26 @@ class GitHubRepoAPI(IRepositoryAPI):
         except Exception as e:
             logging.error(f"Failed to get commits from GitHub for repo {repo.name}: {e}")
             return []
+
+    def get_contributors(self, repo: Repository) -> List[Contributor]:
+        try:
+            contributors = self.client.get_repo(repo.id).get_contributors()
+            return [Contributor(c.login, c.email or "") for c in contributors]
+        except Exception as e:
+            logging.error(f"Failed to get contributors from GitHub for repo {repo.name}: {e}")
+            return []
+
+    def get_issues(self, repo: Repository) -> List[Issue]:
+        try:
+            issues = self.client.get_repo(repo.id).get_issues(state='all')
+            return [
+                Issue(
+                    i.number,
+                    i.title,
+                    Contributor(i.user.login, i.user.email or ""),
+                    i.state
+                ) for i in issues
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
+            return []
