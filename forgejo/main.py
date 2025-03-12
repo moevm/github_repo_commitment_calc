@@ -1,12 +1,12 @@
+from dotenv import dotenv_values
 from pyforgejo import PyforgejoApi
 
-with open('token') as file:
-    API_KEY = file.read()
-if not API_KEY:
-    print("API_KEY not found")
-    exit(1)
+config = dotenv_values(".env")
 
-client = PyforgejoApi(base_url="https://codeberg.org/api/v1", api_key=API_KEY)
+if not "API_TOKEN" in config:
+    print("Cannot find API_TOKEN in .env file. Check if it exists and has correct token. Aborting...")
+    exit(1)
+client = PyforgejoApi(base_url="https://codeberg.org/api/v1", api_key=config["API_TOKEN"])
 
 repo = client.repository.repo_get(owner="harabat", repo="pyforgejo")
 
