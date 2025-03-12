@@ -48,3 +48,19 @@ class GitHubRepoAPI(IRepositoryAPI):
         except Exception as e:
             logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
             return []
+        
+
+    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+        try:
+            pulls = self.client.get_repo(repo.id).get_pulls(state='all')
+            return [
+                PullRequest(
+                    p.number,
+                    p.title,
+                    Contributor(p.user.login, p.user.email or ""),
+                    p.state
+                ) for p in pulls
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
+            return []
