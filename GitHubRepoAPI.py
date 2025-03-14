@@ -79,7 +79,40 @@ class GitHubRepoAPI(IRepositoryAPI):
             return []
         
     def get_branches(self, repo: Repository) -> List[Branch]:
-        pass
+        try:
+            repo_client = self.client.get_repo(repo._id)
+            branches = repo_client.get_branches()
+            result = []
+        
+            for branch in branches:
+                commit = repo_client.get_commit(branch.commit.sha)
+            
+                
+                author = commit.author
+                contributor = Contributor(
+                    username=author.login if author else "unknown",
+                    email=commit.commit.author.email or ""
+                )
+            
+                commit_obj = Commit(
+                    _id=commit.sha,
+                    message=commit.commit.message,
+                    author=contributor,
+                    date=commit.commit.author.date
+                )
+            
+                result.append(
+                    Branch(
+                        name=branch.name,
+                        last_commit=commit_obj
+                    )
+                )
+        
+            return result
+    
+        except Exception as e:
+            logging.error(f"Failed to get branches from GitHub for repo {repo.name}: {e}")
+            return []
 
     def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
         pass
@@ -126,3 +159,10 @@ if __name__ == "__main__":
     print(f"Total pull requests: {len(pulls)}")
     for pull in pulls[:10]:  # Выведем первые 10 pull requests
         print(f"Pull Request: {pull._id}, Title: {pull.title}, State: {pull.state}")
+
+
+    # Получение веток
+    branches = api.get_branches(repo)
+    print(f"Total branches: {len(branches)}")
+    for branch in branches:
+        print(f"Branch: {branch.name}, Last Commit: {branch.last_commit._id if branch.last_commit else 'None'}")
