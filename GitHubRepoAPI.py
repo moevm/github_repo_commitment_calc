@@ -9,7 +9,6 @@ from interface_wrapper import (
     Branch,
     IRepositoryAPI,
 )
-from typing import Optional, List
 from github import Github
 
 class GitHubRepoAPI(IRepositoryAPI):
@@ -17,7 +16,7 @@ class GitHubRepoAPI(IRepositoryAPI):
     def __init__(self, client):
         self.client = client
 
-    def get_repository(self, id: str) -> Optional[Repository]:
+    def get_repository(self, id: str) -> Repository | None:
         try:
             repo = self.client.get_repo(id)
             return Repository(_id=repo.full_name, name=repo.name, url=repo.html_url)
@@ -25,7 +24,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
             return None
 
-    def get_commits(self, repo: Repository) -> List[Commit]:
+    def get_commits(self, repo: Repository) -> list[Commit]:
         try:
             commits = self.client.get_repo(repo._id).get_commits()
             return [
@@ -40,7 +39,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get commits from GitHub for repo {repo.name}: {e}")
             return []
 
-    def get_contributors(self, repo: Repository) -> List[Contributor]:
+    def get_contributors(self, repo: Repository) -> list[Contributor]:
         try:
             contributors = self.client.get_repo(repo._id).get_contributors()
             return [Contributor(c.login, c.email or "") for c in contributors]
@@ -48,7 +47,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get contributors from GitHub for repo {repo.name}: {e}")
             return []
 
-    def get_issues(self, repo: Repository) -> List[Issue]:
+    def get_issues(self, repo: Repository) -> list[Issue]:
         try:
             issues = self.client.get_repo(repo._id).get_issues(state='all')
             return [
@@ -63,7 +62,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
             return []
 
-    def get_pull_requests(self, repo: Repository) -> List[PullRequest]:
+    def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
             pulls = self.client.get_repo(repo._id).get_pulls(state='all')
             return [
@@ -78,7 +77,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
             return []
         
-    def get_branches(self, repo: Repository) -> List[Branch]:
+    def get_branches(self, repo: Repository) -> list[Branch]:
         try:
             repo_client = self.client.get_repo(repo._id)
             branches = repo_client.get_branches()
@@ -114,7 +113,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get branches from GitHub for repo {repo.name}: {e}")
             return []
 
-    def get_wiki_pages(self, repo: Repository) -> List[WikiPage]:
+    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
         pass
 
 
