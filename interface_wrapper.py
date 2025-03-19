@@ -5,9 +5,9 @@ import logging
 
 # Настройка логирования
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
 
 # Модельные классы
 @dataclass
@@ -16,10 +16,12 @@ class Repository:
     name: str
     url: str
 
+
 @dataclass
 class Contributor:
     username: str
     email: str
+
 
 @dataclass
 class Commit:
@@ -28,12 +30,14 @@ class Commit:
     author: Contributor
     date: datetime
 
+
 @dataclass
 class Issue:
     _id: str
     title: str
     author: Contributor
     state: str
+
 
 @dataclass
 class PullRequest:
@@ -42,15 +46,18 @@ class PullRequest:
     author: Contributor
     state: str
 
+
 @dataclass
 class WikiPage:
     title: str
     content: str
 
+
 @dataclass
 class Branch:
     name: str
     last_commit: Commit | None
+
 
 # Интерфейс API
 class IRepositoryAPI(ABC):
@@ -83,12 +90,12 @@ class IRepositoryAPI(ABC):
     def get_branches(self, repo: Repository) -> list[Branch]:
         """Получить список веток для репозитория."""
         pass
-    
+
     @abstractmethod
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
         """Получить список wiki-страниц для репозитория."""
         pass
-   
+
 
 # Фабрика для создания API
 class RepositoryFactory:
@@ -102,6 +109,7 @@ class RepositoryFactory:
             return ForgejoRepoAPI(client)
         else:
             raise ValueError(f"Unsupported source: {source}")
+
 
 # Сервис для расчёта метрик
 class CommitmentCalculator:

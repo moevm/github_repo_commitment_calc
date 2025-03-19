@@ -6,10 +6,21 @@ from time import sleep
 from github import Github, Repository, GithubException, PullRequest
 import csv
 
-FIELDNAMES = ('repository name', 'invited login', 'invite creation date', 'invitation url')
+FIELDNAMES = (
+    'repository name',
+    'invited login',
+    'invite creation date',
+    'invitation url',
+)
+
 
 def log_inviter(repo, invite, writer):
-    invite_info = [repo.full_name, invite.invitee.login, invite.created_at.strftime("%d/%m/%Y, %H:%M:%S"), invite.html_url]
+    invite_info = [
+        repo.full_name,
+        invite.invitee.login,
+        invite.created_at.strftime("%d/%m/%Y, %H:%M:%S"),
+        invite.html_url,
+    ]
     writer.writerow(invite_info)
     print(invite_info)
 

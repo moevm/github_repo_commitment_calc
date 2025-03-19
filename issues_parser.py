@@ -9,10 +9,31 @@ from github import Github, Repository, GithubException, PullRequest
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = ('repository name', 'number', 'title', 'state', 'task', 'created at', 'creator name', 'creator login',
-              'creator email', 'closer name', 'closer login', 'closer email', 'closed at', 'comment body',
-              'comment created at', 'comment author name', 'comment author login', 'comment author email',
-              'assignee story', 'connected pull requests', 'labels', 'milestone')
+FIELDNAMES = (
+    'repository name',
+    'number',
+    'title',
+    'state',
+    'task',
+    'created at',
+    'creator name',
+    'creator login',
+    'creator email',
+    'closer name',
+    'closer login',
+    'closer email',
+    'closed at',
+    'comment body',
+    'comment created at',
+    'comment author name',
+    'comment author login',
+    'comment author email',
+    'assignee story',
+    'connected pull requests',
+    'labels',
+    'milestone',
+)
+
 
 def log_issue_to_csv(info, csv_name):
     with open(csv_name, 'a', newline='') as file:
@@ -57,29 +78,42 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
           }
         }
       }
-    }""" % (repo_owner, repo_name, issue_number)
+    }""" % (
+        repo_owner,
+        repo_name,
+        issue_number,
+    )
 
     # Формирование заголовков запроса
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     # Отправка запроса GraphQL
-    response = requests.post("https://api.github.com/graphql", headers=headers, data=json.dumps({"query": query}))
+    response = requests.post(
+        "https://api.github.com/graphql",
+        headers=headers,
+        data=json.dumps({"query": query}),
+    )
     response_data = response.json()
     # Обработка полученных данных
     pull_request_data = response_data["data"]["repository"]["issue"]
     list_url = []
-    if (pull_request_data is not None):
+    if pull_request_data is not None:
         issues_data = pull_request_data["timelineItems"]["nodes"]
         for pulls in issues_data:
-            if (pulls.get("CrossReferencedEvent") != None and pulls.get("CrossReferencedEvent").get(
-                    "url") not in list_url):
+            if (
+                pulls.get("CrossReferencedEvent") != None
+                and pulls.get("CrossReferencedEvent").get("url") not in list_url
+            ):
                 list_url.append(pulls.get("CrossReferencedEvent").get("url"))
-            if (pulls.get("ConnectedEvent") != None and pulls.get("ConnectedEvent").get("url") not in list_url):
+            if (
+                pulls.get("ConnectedEvent") != None
+                and pulls.get("ConnectedEvent").get("url") not in list_url
+            ):
                 list_url.append(pulls.get("ConnectedEvent").get("url"))
-        if (list_url == []):
+        if list_url == []:
             return 'Empty field'
         else:
             return ';'.join(list_url)
@@ -88,14 +122,19 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
 
 def log_repository_issues(repository: Repository, csv_name, token, start, finish):
     for issue in repository.get_issues(state='all'):
-        if issue.created_at.astimezone(pytz.timezone(TIMEZONE)) < start or issue.created_at.astimezone(
-                pytz.timezone(TIMEZONE)) > finish:
+        if (
+            issue.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
+            or issue.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
+        ):
             continue
         nvl = lambda val: val or EMPTY_FIELD
         get_info = lambda obj, attr: EMPTY_FIELD if obj is None else getattr(obj, attr)
         info_tmp = {
-            'repository name': repository.full_name, 'number': issue.number, 'title': issue.title,
-            'state': issue.state, 'task': issue.body,
+            'repository name': repository.full_name,
+            'number': issue.number,
+            'title': issue.title,
+            'state': issue.state,
+            'task': issue.body,
             'created at': issue.created_at,
             'creator name': get_info(issue.user, 'name'),
             'creator login': get_info(issue.user, 'login'),
@@ -110,9 +149,19 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
             'comment author login': EMPTY_FIELD,
             'comment author email': EMPTY_FIELD,
             'assignee story': get_assignee_story(issue),
-            'connected pull requests': EMPTY_FIELD if issue.number is None else get_connected_pulls(issue.number, repository.owner, repository.name, token),
-            'labels': EMPTY_FIELD if issue.labels is None else ';'.join([label.name for label in issue.labels]),
-            'milestone': get_info(issue.milestone, 'title')
+            'connected pull requests': (
+                EMPTY_FIELD
+                if issue.number is None
+                else get_connected_pulls(
+                    issue.number, repository.owner, repository.name, token
+                )
+            ),
+            'labels': (
+                EMPTY_FIELD
+                if issue.labels is None
+                else ';'.join([label.name for label in issue.labels])
+            ),
+            'milestone': get_info(issue.milestone, 'title'),
         }
 
         if issue.get_comments().totalCount > 0:
