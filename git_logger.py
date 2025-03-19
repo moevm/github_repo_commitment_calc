@@ -4,6 +4,7 @@ from time import sleep
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
+
 def login(token):
     client = Github(login_or_token=token)
 
@@ -34,8 +35,11 @@ def get_next_repo(client: Github, repositories):
 
 def get_assignee_story(github_object):
     assignee_result = ""
-    events = github_object.get_issue_events() if type(
-        github_object) is PullRequest.PullRequest else github_object.get_events()
+    events = (
+        github_object.get_issue_events()
+        if type(github_object) is PullRequest.PullRequest
+        else github_object.get_events()
+    )
     for event in events:
         if event.event in ["assigned", "unassigned"]:
             date = event.created_at

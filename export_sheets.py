@@ -1,14 +1,11 @@
 import pygsheets
 import pandas as pd
 
-INT_MASS = [{
-    "one": 1,
-    "two": 2,
-    "what?": 3
-}]
+INT_MASS = [{"one": 1, "two": 2, "what?": 3}]
+
 
 def write_data_to_table(csv_path, google_token, table_id, sheet_id):
-    if google_token and sheet_id and table_id :
+    if google_token and sheet_id and table_id:
         gc = pygsheets.authorize(service_file=google_token)
         sh = gc.open_by_key(table_id)
 

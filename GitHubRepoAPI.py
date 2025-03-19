@@ -11,8 +11,9 @@ from interface_wrapper import (
 )
 from github import Github
 
+
 class GitHubRepoAPI(IRepositoryAPI):
-    
+
     def __init__(self, client):
         self.client = client
 
@@ -31,12 +32,17 @@ class GitHubRepoAPI(IRepositoryAPI):
                 Commit(
                     _id=c.sha,
                     message=c.commit.message,
-                    author=Contributor(c.author.login if c.author else "unknown", c.commit.author.email),
-                    date=c.commit.author.date
-                ) for c in commits
+                    author=Contributor(
+                        c.author.login if c.author else "unknown", c.commit.author.email
+                    ),
+                    date=c.commit.author.date,
+                )
+                for c in commits
             ]
         except Exception as e:
-            logging.error(f"Failed to get commits from GitHub for repo {repo.name}: {e}")
+            logging.error(
+                f"Failed to get commits from GitHub for repo {repo.name}: {e}"
+            )
             return []
 
     def get_contributors(self, repo: Repository) -> list[Contributor]:
@@ -44,7 +50,9 @@ class GitHubRepoAPI(IRepositoryAPI):
             contributors = self.client.get_repo(repo._id).get_contributors()
             return [Contributor(c.login, c.email or "") for c in contributors]
         except Exception as e:
-            logging.error(f"Failed to get contributors from GitHub for repo {repo.name}: {e}")
+            logging.error(
+                f"Failed to get contributors from GitHub for repo {repo.name}: {e}"
+            )
             return []
 
     def get_issues(self, repo: Repository) -> list[Issue]:
@@ -55,8 +63,9 @@ class GitHubRepoAPI(IRepositoryAPI):
                     _id=i.number,
                     title=i.title,
                     author=Contributor(i.user.login, i.user.email or ""),
-                    state=i.state
-                ) for i in issues
+                    state=i.state,
+                )
+                for i in issues
             ]
         except Exception as e:
             logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
@@ -70,47 +79,46 @@ class GitHubRepoAPI(IRepositoryAPI):
                     _id=p.number,
                     title=p.title,
                     author=Contributor(p.user.login, p.user.email or ""),
-                    state=p.state
-                ) for p in pulls
+                    state=p.state,
+                )
+                for p in pulls
             ]
         except Exception as e:
-            logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
+            logging.error(
+                f"Failed to get pull requests from GitHub for repo {repo.name}: {e}"
+            )
             return []
-        
+
     def get_branches(self, repo: Repository) -> list[Branch]:
         try:
             repo_client = self.client.get_repo(repo._id)
             branches = repo_client.get_branches()
             result = []
-        
+
             for branch in branches:
                 commit = repo_client.get_commit(branch.commit.sha)
-            
-                
+
                 author = commit.author
                 contributor = Contributor(
                     username=author.login if author else "unknown",
-                    email=commit.commit.author.email or ""
+                    email=commit.commit.author.email or "",
                 )
-            
+
                 commit_obj = Commit(
                     _id=commit.sha,
                     message=commit.commit.message,
                     author=contributor,
-                    date=commit.commit.author.date
+                    date=commit.commit.author.date,
                 )
-            
-                result.append(
-                    Branch(
-                        name=branch.name,
-                        last_commit=commit_obj
-                    )
-                )
-        
+
+                result.append(Branch(name=branch.name, last_commit=commit_obj))
+
             return result
-    
+
         except Exception as e:
-            logging.error(f"Failed to get branches from GitHub for repo {repo.name}: {e}")
+            logging.error(
+                f"Failed to get branches from GitHub for repo {repo.name}: {e}"
+            )
             return []
 
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
@@ -123,7 +131,7 @@ if __name__ == "__main__":
     client = Github("tocken")
     api = GitHubRepoAPI(client)
 
-    # Укажите ваш репозиторий 
+    # Укажите ваш репозиторий
     repo_name = ""
 
     # Получение репозитория
@@ -139,7 +147,9 @@ if __name__ == "__main__":
     commits = api.get_commits(repo)
     print(f"Total commits: {len(commits)}")
     for commit in commits[:10]:  # Выведем первые 10 коммитов
-        print(f"Commit: {commit._id}, Message: {commit.message}, Author: {commit.author.username}")
+        print(
+            f"Commit: {commit._id}, Message: {commit.message}, Author: {commit.author.username}"
+        )
 
     # Получение контрибьюторов
     contributors = api.get_contributors(repo)
@@ -159,9 +169,10 @@ if __name__ == "__main__":
     for pull in pulls[:10]:  # Выведем первые 10 pull requests
         print(f"Pull Request: {pull._id}, Title: {pull.title}, State: {pull.state}")
 
-
     # Получение веток
     branches = api.get_branches(repo)
     print(f"Total branches: {len(branches)}")
     for branch in branches:
-        print(f"Branch: {branch.name}, Last Commit: {branch.last_commit._id if branch.last_commit else 'None'}")
+        print(
+            f"Branch: {branch.name}, Last Commit: {branch.last_commit._id if branch.last_commit else 'None'}"
+        )
