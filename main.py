@@ -15,25 +15,83 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--invites", help="print pending invites", action="store_true")
     parser.add_argument("-c", "--commits", help="log commits", action="store_true")
-    parser.add_argument("-p", "--pull_requests", help="log pull requests", action="store_true")
+    parser.add_argument(
+        "-p", "--pull_requests", help="log pull requests", action="store_true"
+    )
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
     parser.add_argument("--contributors", help="log contributors", action="store_true")
-    parser.add_argument("--forks_include", help="logging data from forks", action="store_true")
-    parser.add_argument("-e", "--export_google_sheets", help="export table to google sheets", action="store_true")
-    parser.add_argument('-t', '--token', type=str, required=True, help='token github account')
-    parser.add_argument('-l', '--list', type=str, required=True, help='Path to the file containing the list of repositories. Repositories should be separated by a line break. Names should be in the format <organization or owner>/<name> ')
-    parser.add_argument("--download_repos", type=str, help="path to downloaded repositories", default='./')
+    parser.add_argument(
+        "--forks_include", help="logging data from forks", action="store_true"
+    )
+    parser.add_argument(
+        "-e",
+        "--export_google_sheets",
+        help="export table to google sheets",
+        action="store_true",
+    )
+    parser.add_argument(
+        '-t', '--token', type=str, required=True, help='token github account'
+    )
+    parser.add_argument(
+        '-l',
+        '--list',
+        type=str,
+        required=True,
+        help='Path to the file containing the list of repositories. Repositories should be separated by a line break. Names should be in the format <organization or owner>/<name> ',
+    )
+    parser.add_argument(
+        "--download_repos",
+        type=str,
+        help="path to downloaded repositories",
+        default='./',
+    )
     parser.add_argument('-o', '--out', type=str, required=True, help='output filename')
-    parser.add_argument("--pr_comments", help="log comments for PR", action="store_true")
-    parser.add_argument('-s', '--start', type=str, required=False, help='start time', default='2000/01/01-00:00:00')
-    parser.add_argument('-f', '--finish', type=str, required=False, help='finish time', default='2400/01/01-00:00:00')
-    parser.add_argument('-b', '--branch', type=str, required=False, help='branch to select commits, by default use "default" repository branch, use "all" to get all commits from all branches', default=None)
-    parser.add_argument('--google_token', type=str, required=False, help='Specify path to google token file')
-    parser.add_argument('--table_id', type=str, required=False,
-                        help='Specify Google sheet document id (can find in url)')
-    parser.add_argument('--sheet_id', type=str, required=False,
-                        help='Specify title for a sheet in a document in which data will be printed')
+    parser.add_argument(
+        "--pr_comments", help="log comments for PR", action="store_true"
+    )
+    parser.add_argument(
+        '-s',
+        '--start',
+        type=str,
+        required=False,
+        help='start time',
+        default='2000/01/01-00:00:00',
+    )
+    parser.add_argument(
+        '-f',
+        '--finish',
+        type=str,
+        required=False,
+        help='finish time',
+        default='2400/01/01-00:00:00',
+    )
+    parser.add_argument(
+        '-b',
+        '--branch',
+        type=str,
+        required=False,
+        help='branch to select commits, by default use "default" repository branch, use "all" to get all commits from all branches',
+        default=None,
+    )
+    parser.add_argument(
+        '--google_token',
+        type=str,
+        required=False,
+        help='Specify path to google token file',
+    )
+    parser.add_argument(
+        '--table_id',
+        type=str,
+        required=False,
+        help='Specify Google sheet document id (can find in url)',
+    )
+    parser.add_argument(
+        '--sheet_id',
+        type=str,
+        required=False,
+        help='Specify title for a sheet in a document in which data will be printed',
+    )
     args = parser.parse_args()
     
     if args.export_google_sheets:
