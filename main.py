@@ -12,6 +12,7 @@ import wikipars
 import contributors_parser
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--invites", help="print pending invites", action="store_true")
