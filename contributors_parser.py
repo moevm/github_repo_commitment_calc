@@ -1,4 +1,4 @@
-import csv
+from utils import logger
 from time import sleep
 from typing import Generator
 from github import Github, Repository, GithubException
@@ -20,16 +20,6 @@ FIELDNAMES = (
     'bio',
     'site_admin',
 )
-
-
-def log_contributors_to_csv(info: dict, csv_name: str):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
-
-
-def log_contributors_to_stdout(info: dict):
-    print(info)
 
 
 def log_repository_contributors(repository: Repository, csv_name: str):
@@ -56,8 +46,8 @@ def log_repository_contributors(repository: Repository, csv_name: str):
             'site_admin': contributor.site_admin,
         }
 
-        log_contributors_to_csv(info_tmp, csv_name)
-        log_contributors_to_stdout(info_tmp)
+        logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
+        logger.log_to_stdout(info_tmp)
 
         sleep(TIMEDELTA)
 
@@ -85,18 +75,16 @@ def get_contributors_stats(repository: Repository) -> dict:
 def log_contributors(
     client: Github, working_repos: Generator, csv_name: str, fork_flag: bool
 ):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(FIELDNAMES)
+    logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repos:
         try:
-            print('=' * 20, repo.full_name, '=' * 20)
+            logger.log_title(repo.full_name)
             log_repository_contributors(repo, csv_name)
 
             if fork_flag:
                 for forked_repo in repo.get_forks():
-                    print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
+                    logger.log_title("FORKED:", forked_repo.full_name)
                     log_repository_contributors(forked_repo, csv_name)
                     sleep(TIMEDELTA)
 

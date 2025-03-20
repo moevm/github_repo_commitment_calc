@@ -12,7 +12,6 @@ import wikipars
 import contributors_parser
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--invites", help="print pending invites", action="store_true")
@@ -140,10 +139,9 @@ def main():
         print(e)
     else:
         working_repos = git_logger.get_next_repo(client, repositories)
-        if args.start:
-            start = parse_time(args.start.split('-'))
-        if args.finish:
-            finish = parse_time(args.finish.split('-'))
+        start = parse_time(args.start.split('-'))
+        finish = parse_time(args.finish.split('-'))
+
         if args.commits:
             commits_parser.log_commits(
                 client, working_repos, csv_name, start, finish, args.branch, fork_flag

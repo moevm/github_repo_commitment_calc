@@ -1,4 +1,4 @@
-import csv
+from utils import logger
 import pytz
 import requests
 import json
@@ -33,16 +33,6 @@ FIELDNAMES = (
     'labels',
     'milestone',
 )
-
-
-def log_issue_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
-
-
-def log_issue_to_stdout(info):
-    print(info)
 
 
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
@@ -172,26 +162,26 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
                 info['comment author name'] = comment.user.name
                 info['comment author login'] = comment.user.login
                 info['comment author email'] = comment.user.email
-                log_issue_to_csv(info, csv_name)
-                log_issue_to_stdout(info)
+
+                logger.log_to_csv(csv_name, FIELDNAMES, info)
+                logger.log_to_stdout(info)
         else:
-            log_issue_to_csv(info_tmp, csv_name)
-            log_issue_to_stdout(info_tmp)
+            logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
+            logger.log_to_stdout(info_tmp)
+
         sleep(TIMEDELTA)
 
 
 def log_issues(client: Github, working_repo, csv_name, token, start, finish, fork_flag):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(FIELDNAMES)
+    logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repo:
         try:
-            print('=' * 20, repo.full_name, '=' * 20)
+            logger.log_title(repo.full_name)
             log_repository_issues(repo, csv_name, token, start, finish)
             if fork_flag:
                 for forked_repo in repo.get_forks():
-                    print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
+                    logger.log_title("FORKED:", forked_repo.full_name)
                     log_repository_issues(forked_repo, csv_name, token, start, finish)
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
