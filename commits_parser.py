@@ -6,7 +6,17 @@ from github import Github, Repository, GithubException, PullRequest
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = ('repository name', 'author name', 'author login', 'author email', 'date and time', 'changed files', 'commit id', 'branch')
+FIELDNAMES = (
+    'repository name',
+    'author name',
+    'author login',
+    'author email',
+    'date and time',
+    'changed files',
+    'commit id',
+    'branch',
+)
+
 
 def log_commit_to_csv(info, csv_name):
     with open(csv_name, 'a', newline='') as file:
@@ -33,14 +43,24 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
         print(f'Processing branch {branch}')
         # TODO add support of since and until in https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_commits
         for commit in repository.get_commits(sha=branch):
-            if commit.commit.author.date.astimezone(
-                    pytz.timezone(TIMEZONE)) < start or commit.commit.author.date.astimezone(
-                pytz.timezone(TIMEZONE)) > finish:
+            if (
+                commit.commit.author.date.astimezone(pytz.timezone(TIMEZONE)) < start
+                or commit.commit.author.date.astimezone(pytz.timezone(TIMEZONE))
+                > finish
+            ):
                 continue
             if commit.commit is not None:
                 nvl = lambda val: val or EMPTY_FIELD
-                commit_data = [repository.full_name, commit.commit.author.name, nvl(commit.author.login if commit.author else None), nvl(commit.commit.author.email),
-                               commit.commit.author.date, '; '.join([file.filename for file in commit.files]), commit.commit.sha, branch]
+                commit_data = [
+                    repository.full_name,
+                    commit.commit.author.name,
+                    nvl(commit.author.login if commit.author else None),
+                    nvl(commit.commit.author.email),
+                    commit.commit.author.date,
+                    '; '.join([file.filename for file in commit.files]),
+                    commit.commit.sha,
+                    branch,
+                ]
                 info = dict(zip(FIELDNAMES, commit_data))
 
                 log_commit_to_csv(info, csv_name)
@@ -48,11 +68,12 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
                 sleep(TIMEDELTA)
 
 
-def log_commits(client: Github, working_repos, csv_name, start, finish, branch, fork_flag):
+def log_commits(
+    client: Github, working_repos, csv_name, start, finish, branch, fork_flag
+):
     with open(csv_name, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(FIELDNAMES)
-
 
     for repo in working_repos:
         try:

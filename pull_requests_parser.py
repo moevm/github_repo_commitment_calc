@@ -9,11 +9,34 @@ from github import Github, Repository, GithubException, PullRequest
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = ('repository name', 'title', 'id', 'state', 'commit into', 'commit from', 'created at', 'creator name',
-              'creator login', 'creator email', 'changed files', 'comment body',
-              'comment created at', 'comment author name', 'comment author login',
-              'comment author email', 'merger name', 'merger login', 'merger email', 'source branch',
-              'target branch', 'assignee story', 'related issues', 'labels', 'milestone')
+FIELDNAMES = (
+    'repository name',
+    'title',
+    'id',
+    'state',
+    'commit into',
+    'commit from',
+    'created at',
+    'creator name',
+    'creator login',
+    'creator email',
+    'changed files',
+    'comment body',
+    'comment created at',
+    'comment author name',
+    'comment author login',
+    'comment author email',
+    'merger name',
+    'merger login',
+    'merger email',
+    'source branch',
+    'target branch',
+    'assignee story',
+    'related issues',
+    'labels',
+    'milestone',
+)
+
 
 def log_pr_to_stdout(info):
     print(info)
@@ -49,16 +72,24 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
             }
           }
         }
-        """ % (repo_owner, repo_name, pull_request_number)
+        """ % (
+        repo_owner,
+        repo_name,
+        pull_request_number,
+    )
 
     # Формирование заголовков запроса
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     # Отправка запроса GraphQL
-    response = requests.post("https://api.github.com/graphql", headers=headers, data=json.dumps({"query": query}))
+    response = requests.post(
+        "https://api.github.com/graphql",
+        headers=headers,
+        data=json.dumps({"query": query}),
+    )
     response_data = response.json()
     # Обработка полученных данных
     pull_request_data = response_data["data"]["repository"]["pullRequest"]
@@ -71,10 +102,14 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
     return ';'.join(list_issues_url)
 
 
-def log_repositories_pr(repository: Repository, csv_name, token, start, finish, log_comments=False):
+def log_repositories_pr(
+    repository: Repository, csv_name, token, start, finish, log_comments=False
+):
     for pull in repository.get_pulls(state='all'):
-        if pull.created_at.astimezone(pytz.timezone(TIMEZONE)) < start or pull.created_at.astimezone(
-                pytz.timezone(TIMEZONE)) > finish:
+        if (
+            pull.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
+            or pull.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
+        ):
             continue
         nvl = lambda val: val or EMPTY_FIELD
         get_info = lambda obj, attr: EMPTY_FIELD if obj is None else getattr(obj, attr)
@@ -101,9 +136,19 @@ def log_repositories_pr(repository: Repository, csv_name, token, start, finish, 
             'source branch': pull.head.ref,
             'target branch': pull.base.ref,
             'assignee story': get_assignee_story(pull),
-            'related issues': EMPTY_FIELD if pull.issue_url is None else get_related_issues(pull.number, repository.owner, repository.name, token),
-            'labels': EMPTY_FIELD if pull.labels is None else ';'.join([label.name for label in pull.labels]),
-            'milestone': get_info(pull.milestone, 'title')
+            'related issues': (
+                EMPTY_FIELD
+                if pull.issue_url is None
+                else get_related_issues(
+                    pull.number, repository.owner, repository.name, token
+                )
+            ),
+            'labels': (
+                EMPTY_FIELD
+                if pull.labels is None
+                else ';'.join([label.name for label in pull.labels])
+            ),
+            'milestone': get_info(pull.milestone, 'title'),
         }
 
         if log_comments:
@@ -122,7 +167,16 @@ def log_repositories_pr(repository: Repository, csv_name, token, start, finish, 
         sleep(TIMEDELTA)
 
 
-def log_pull_requests(client: Github, working_repos, csv_name, token, start, finish, fork_flag, log_comments=False):
+def log_pull_requests(
+    client: Github,
+    working_repos,
+    csv_name,
+    token,
+    start,
+    finish,
+    fork_flag,
+    log_comments=False,
+):
     with open(csv_name, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(FIELDNAMES)
@@ -134,7 +188,9 @@ def log_pull_requests(client: Github, working_repos, csv_name, token, start, fin
             if fork_flag:
                 for forked_repo in repo.get_forks():
                     print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
-                    log_repositories_pr(forked_repo, csv_name, token, start, finish, log_comments)
+                    log_repositories_pr(
+                        forked_repo, csv_name, token, start, finish, log_comments
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:

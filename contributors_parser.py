@@ -6,7 +6,20 @@ from github import Github, Repository, GithubException
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = ('repository name', 'login', 'name', 'email', 'url', 'permissions', 'total_commits', 'id', 'node_id', 'type', 'bio', 'site_admin')
+FIELDNAMES = (
+    'repository name',
+    'login',
+    'name',
+    'email',
+    'url',
+    'permissions',
+    'total_commits',
+    'id',
+    'node_id',
+    'type',
+    'bio',
+    'site_admin',
+)
 
 
 def log_contributors_to_csv(info: dict, csv_name: str):
@@ -14,8 +27,10 @@ def log_contributors_to_csv(info: dict, csv_name: str):
         writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
         writer.writerow(info)
 
+
 def log_contributors_to_stdout(info: dict):
     print(info)
+
 
 def log_repository_contributors(repository: Repository, csv_name: str):
     contributors_stats = get_contributors_stats(repository)
@@ -46,9 +61,10 @@ def log_repository_contributors(repository: Repository, csv_name: str):
 
         sleep(TIMEDELTA)
 
+
 def get_contributors_stats(repository: Repository) -> dict:
     contributors_stats = dict()
-    
+
     for commit in repository.get_commits():
         contributor = commit.author
 
@@ -56,7 +72,7 @@ def get_contributors_stats(repository: Repository) -> dict:
             contributors_stats[contributor.login] = {
                 'total_commits': 0,
                 'email': commit.commit.author.email,
-                'contributor_object': contributor
+                'contributor_object': contributor,
             }
 
         contributors_stats[contributor.login]['total_commits'] += 1
@@ -65,7 +81,10 @@ def get_contributors_stats(repository: Repository) -> dict:
 
     return contributors_stats
 
-def log_contributors(client: Github, working_repos: Generator, csv_name: str, fork_flag: bool):
+
+def log_contributors(
+    client: Github, working_repos: Generator, csv_name: str, fork_flag: bool
+):
     with open(csv_name, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(FIELDNAMES)
