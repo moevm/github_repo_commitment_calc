@@ -13,7 +13,7 @@ def login(token):
     except GithubException as err:
         print(f'Github: Connect: error {err.data}')
         print('Github: Connect: user could not be authenticated please try again.')
-        raise exit(1)
+        exit(1)
     else:
         return client
 

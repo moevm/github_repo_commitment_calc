@@ -9,6 +9,8 @@ import pull_requests_parser
 import issues_parser
 import invites_parser
 import wikipars
+import contributors_parser
+
 
 
 def parse_args():
@@ -20,6 +22,7 @@ def parse_args():
     )
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
+    parser.add_argument("--contributors", help="log contributors", action="store_true")
     parser.add_argument(
         "--forks_include", help="logging data from forks", action="store_true"
     )
@@ -130,7 +133,6 @@ def main():
     path_drepo = args.download_repos
     fork_flag = args.forks_include
     log_pr_comments = args.pr_comments
-    start, finish = None, None
 
     try:
         client = git_logger.login(token=token)
@@ -165,6 +167,10 @@ def main():
             invites_parser.log_invitations(client, working_repos, csv_name)
         if args.wikis:
             wikipars.wikiparser(client, repositories, path_drepo, csv_name)
+        if args.contributors:
+            contributors_parser.log_contributors(
+                client, working_repos, csv_name, fork_flag
+            )
         if args.export_google_sheets:
             export_sheets.write_data_to_table(
                 csv_name, args.google_token, args.table_id, args.sheet_id
