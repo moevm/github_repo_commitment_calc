@@ -17,6 +17,7 @@ FIELDNAMES = (
     'branch',
 )
 
+
 def log_repository_commits(repository: Repository, csv_name, start, finish, branch):
     branches = []
     match branch:

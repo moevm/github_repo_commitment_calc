@@ -10,6 +10,7 @@ FIELDNAMES = (
 )
 TIMEDELTA = 0.05
 
+
 def log_inviter(repo, invite, writer):
     invite_info = [
         repo.full_name,
@@ -20,14 +21,15 @@ def log_inviter(repo, invite, writer):
     writer.writerow(invite_info)
     print(invite_info)
 
+
 def log_repository_invitations(repository: Repository, csv_name):
     invitations = repository.get_pending_invitations()
     for invite in invitations:
         invite_info = {
-        'repository name': repository.full_name,
-        'invited login': invite.invitee.login,
-        'invite creation date': invite.created_at.strftime("%d/%m/%Y, %H:%M:%S"),
-        'invitation url': invite.html_url,
+            'repository name': repository.full_name,
+            'invited login': invite.invitee.login,
+            'invite creation date': invite.created_at.strftime("%d/%m/%Y, %H:%M:%S"),
+            'invitation url': invite.html_url,
         }
         logger.log_to_csv(csv_name, FIELDNAMES, invite_info)
         logger.log_to_stdout(invite_info)

@@ -21,6 +21,7 @@ FIELDNAMES = (
     'site_admin',
 )
 
+
 def log_repository_contributors(repository: Repository, csv_name: str):
     contributors_stats = get_contributors_stats(repository)
 

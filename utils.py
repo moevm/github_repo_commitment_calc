@@ -4,6 +4,7 @@ TITLE_LEN = 80
 MIN_SIDE_PADDING = 4
 SIDE_WHITE_SPACES = 1
 
+
 class logger:
     @staticmethod
     def log_title(title: str, title_len: int = TITLE_LEN):
@@ -15,9 +16,11 @@ class logger:
         padding = title_len - (len(title) + SIDE_WHITE_SPACES * 2)
 
         right_padding = (padding + 1) // 2
-        left_padding  = padding // 2
+        left_padding = padding // 2
 
-        print(f"{left_padding * '='}{SIDE_WHITE_SPACES * ' '}{title}{SIDE_WHITE_SPACES * ' '}{right_padding * '='}")
+        print(
+            f"{left_padding * '='}{SIDE_WHITE_SPACES * ' '}{title}{SIDE_WHITE_SPACES * ' '}{right_padding * '='}"
+        )
 
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
@@ -30,7 +33,7 @@ class logger:
             row = field_names
         else:
             raise TypeError(f"row has type {type(row)} but must be [ dict | None ]")
-        
+
         writer.writerow(row)
 
         file.close()
@@ -43,7 +46,7 @@ class logger:
     def log_error(error: str):
         # или использовать logging, как в interface_wrapper
         pass
-    
+
     @staticmethod
     def log_warning(warning: str):
         pass

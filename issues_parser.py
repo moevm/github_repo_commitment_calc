@@ -168,7 +168,7 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
         else:
             logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
             logger.log_to_stdout(info_tmp)
-            
+
         sleep(TIMEDELTA)
 
 
