@@ -152,15 +152,17 @@ def log_repositories_pr(
         }
 
         if log_comments:
-            for comment in pull.get_comments():
-                info = info_tmp
-                info['comment body'] = comment.body
-                info['comment created at'] = comment.created_at
-                info['comment author name'] = comment.user.name
-                info['comment author login'] = comment.user.login
-                info['comment author email'] = nvl(comment.user.email)
-                log_pr_to_csv(info, csv_name)
-                log_pr_to_stdout(info)
+            comments = pull.get_comments()
+            if comments.totalCount > 0:
+                for comment in comments:
+                    info = info_tmp
+                    info['comment body'] = comment.body
+                    info['comment created at'] = comment.created_at
+                    info['comment author name'] = comment.user.name
+                    info['comment author login'] = comment.user.login
+                    info['comment author email'] = nvl(comment.user.email)
+                    log_pr_to_csv(info, csv_name)
+                    log_pr_to_stdout(info)
         else:
             log_pr_to_csv(info_tmp, csv_name)
             log_pr_to_stdout(info_tmp)
