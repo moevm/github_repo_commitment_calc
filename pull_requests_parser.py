@@ -1,4 +1,4 @@
-import csv
+from utils import logger
 import pytz
 import requests
 import json
@@ -36,16 +36,6 @@ FIELDNAMES = (
     'labels',
     'milestone',
 )
-
-
-def log_pr_to_stdout(info):
-    print(info)
-
-
-def log_pr_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -161,11 +151,12 @@ def log_repositories_pr(
                     info['comment author name'] = comment.user.name
                     info['comment author login'] = comment.user.login
                     info['comment author email'] = nvl(comment.user.email)
-                    log_pr_to_csv(info, csv_name)
-                    log_pr_to_stdout(info)
+
+                    logger.log_to_csv(csv_name, FIELDNAMES, info)
+                    logger.log_to_stdout(info)
         else:
-            log_pr_to_csv(info_tmp, csv_name)
-            log_pr_to_stdout(info_tmp)
+            logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
+            logger.log_to_stdout(info_tmp)
         sleep(TIMEDELTA)
 
 
@@ -179,17 +170,15 @@ def log_pull_requests(
     fork_flag,
     log_comments=False,
 ):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(FIELDNAMES)
+    logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repos:
         try:
-            print('=' * 20, repo.full_name, '=' * 20)
+            logger.log_title(repo.full_name)
             log_repositories_pr(repo, csv_name, token, start, finish)
             if fork_flag:
                 for forked_repo in repo.get_forks():
-                    print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
+                    logger.log_title("FORKED:", forked_repo.full_name)
                     log_repositories_pr(
                         forked_repo, csv_name, token, start, finish, log_comments
                     )

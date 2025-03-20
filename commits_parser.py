@@ -1,4 +1,4 @@
-import csv
+from utils import logger
 import pytz
 from time import sleep
 from github import Github, Repository, GithubException, PullRequest
@@ -16,17 +16,6 @@ FIELDNAMES = (
     'commit id',
     'branch',
 )
-
-
-def log_commit_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
-
-
-def log_commit_to_stdout(info):
-    print(info)
-
 
 def log_repository_commits(repository: Repository, csv_name, start, finish, branch):
     branches = []
@@ -63,25 +52,24 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
                 ]
                 info = dict(zip(FIELDNAMES, commit_data))
 
-                log_commit_to_csv(info, csv_name)
-                log_commit_to_stdout(info)
+                logger.log_to_csv(csv_name, FIELDNAMES, info)
+                logger.log_to_stdout(info)
+
                 sleep(TIMEDELTA)
 
 
 def log_commits(
     client: Github, working_repos, csv_name, start, finish, branch, fork_flag
 ):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(FIELDNAMES)
+    logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repos:
         try:
-            print('=' * 20, repo.full_name, '=' * 20)
+            logger.log_title(repo.full_name)
             log_repository_commits(repo, csv_name, start, finish, branch)
             if fork_flag:
                 for forked_repo in repo.get_forks():
-                    print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
+                    logger.log_title("FORKED:", forked_repo.full_name)
                     log_repository_commits(forked_repo, csv_name, start, finish, branch)
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
