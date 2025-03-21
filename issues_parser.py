@@ -3,7 +3,7 @@ import pytz
 import requests
 import json
 from time import sleep
-from git_logger import get_assignee_story
+from git_logger import get_assignee_story, GithubClients
 from github import Github, Repository, GithubException, PullRequest
 
 EMPTY_FIELD = 'Empty field'
@@ -172,17 +172,27 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
         sleep(TIMEDELTA)
 
 
-def log_issues(client: Github, working_repo, csv_name, token, start, finish, fork_flag):
+def log_issues(
+    clients: GithubClients, working_repo, csv_name, start, finish, fork_flag
+):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repo:
         try:
             logger.log_title(repo.full_name)
-            log_repository_issues(repo, csv_name, token, start, finish)
+            log_repository_issues(
+                repo, csv_name, clients.cur_client["token"], start, finish
+            )
             if fork_flag:
                 for forked_repo in repo.get_forks():
                     logger.log_title("FORKED:", forked_repo.full_name)
-                    log_repository_issues(forked_repo, csv_name, token, start, finish)
+                    log_repository_issues(
+                        forked_repo,
+                        csv_name,
+                        clients.cur_client["token"],
+                        start,
+                        finish,
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:
