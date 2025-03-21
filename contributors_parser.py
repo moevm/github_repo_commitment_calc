@@ -2,6 +2,7 @@ from utils import logger
 from time import sleep
 from typing import Generator
 from github import Github, Repository, GithubException
+import GitHubRepoAPI  # Импортируем обёртку
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -21,14 +22,15 @@ FIELDNAMES = (
     'site_admin',
 )
 
-
 def log_repository_contributors(repository: Repository, csv_name: str):
+    #Нужно добавить
     contributors_stats = get_contributors_stats(repository)
 
     nvl = lambda val: val or EMPTY_FIELD
 
     for contributor_stat in contributors_stats.values():
         contributor = contributor_stat["contributor_object"]
+        #Нужно добавить
         contributor_permissons = repository.get_collaborator_permission(contributor)
 
         info_tmp = {
@@ -51,11 +53,14 @@ def log_repository_contributors(repository: Repository, csv_name: str):
 
         sleep(TIMEDELTA)
 
-
 def get_contributors_stats(repository: Repository) -> dict:
     contributors_stats = dict()
 
-    for commit in repository.get_commits():
+    # Используем обёртку для получения коммитов
+    api = GitHubRepoAPI(repository._github)
+    commits = api.get_commits(repository)
+
+    for commit in commits:
         contributor = commit.author
 
         if not contributor.login in contributors_stats:
@@ -71,11 +76,12 @@ def get_contributors_stats(repository: Repository) -> dict:
 
     return contributors_stats
 
-
 def log_contributors(
     client: Github, working_repos: Generator, csv_name: str, fork_flag: bool
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
+
+    api = GitHubRepoAPI(client)  # Используем обёртку
 
     for repo in working_repos:
         try:
@@ -83,6 +89,7 @@ def log_contributors(
             log_repository_contributors(repo, csv_name)
 
             if fork_flag:
+                #Нужно добавить
                 for forked_repo in repo.get_forks():
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repository_contributors(forked_repo, csv_name)

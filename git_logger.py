@@ -1,15 +1,16 @@
-from github import Github, GithubException, PullRequest
 from time import sleep
+from github import Github, GithubException, PullRequest
+import GitHubRepoAPI  # Импортируем обёртку
 
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-
 
 def login(token):
     client = Github(login_or_token=token)
 
     try:
-        client.get_user().login
+        # Проверяем аутентификацию через оригинальный метод(Нужно добавить)
+        user_login = client.get_user().login
     except GithubException as err:
         print(f'Github: Connect: error {err.data}')
         print('Github: Connect: user could not be authenticated please try again.')
@@ -17,14 +18,17 @@ def login(token):
     else:
         return client
 
-
 def get_next_repo(client: Github, repositories):
+    api = GitHubRepoAPI(client)  # Используем обёртку
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
     for repo_name in list_repos:
         try:
-            repo = client.get_repo(repo_name)
+            # Получаем репозиторий через обёртку
+            repo = api.get_repository(repo_name)
+            if not repo:
+                raise GithubException(status=404, data={"message": f"Repository {repo_name} not found."})
         except GithubException as err:
             print(f'Github: Connect: error {err.data}')
             print(f'Github: Connect: failed to load repository "{repo_name}"')
@@ -32,10 +36,10 @@ def get_next_repo(client: Github, repositories):
         else:
             yield repo
 
-
 def get_assignee_story(github_object):
     assignee_result = ""
     events = (
+        #Нужно добавить
         github_object.get_issue_events()
         if type(github_object) is PullRequest.PullRequest
         else github_object.get_events()

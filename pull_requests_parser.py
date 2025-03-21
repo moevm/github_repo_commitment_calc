@@ -5,6 +5,7 @@ import json
 from time import sleep
 from git_logger import get_assignee_story
 from github import Github, Repository, GithubException, PullRequest
+import GitHubRepoAPI  # Импортируем обёртку
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -36,7 +37,6 @@ FIELDNAMES = (
     'labels',
     'milestone',
 )
-
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
     access_token = token
@@ -91,11 +91,12 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
         list_issues_url.append(issue_node["url"])
     return ';'.join(list_issues_url)
 
-
 def log_repositories_pr(
-    repository: Repository, csv_name, token, start, finish, log_comments=False
+    client: Github, repository: Repository, csv_name, token, start, finish, log_comments=False,
 ):
-    for pull in repository.get_pulls(state='all'):
+    api = GitHubRepoAPI(client)
+    pulls = api.get_pull_requests(repository)
+    for pull in pulls:
         if (
             pull.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
             or pull.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
@@ -142,6 +143,7 @@ def log_repositories_pr(
         }
 
         if log_comments:
+            #Получаем комментарии через оригинальный метод(Нужно добавить)
             comments = pull.get_comments()
             if comments.totalCount > 0:
                 for comment in comments:
@@ -159,7 +161,6 @@ def log_repositories_pr(
             logger.log_to_stdout(info_tmp)
         sleep(TIMEDELTA)
 
-
 def log_pull_requests(
     client: Github,
     working_repos,
@@ -172,12 +173,22 @@ def log_pull_requests(
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    api = GitHubRepoAPI(client)  # Используем обёртку
+
+    for repo_name in working_repos:
         try:
-            logger.log_title(repo.full_name)
-            log_repositories_pr(repo, csv_name, token, start, finish)
+            # Получаем репозиторий через обёртку
+            repo = api.get_repository(repo_name)
+            if not repo:
+                print(f"Repository {repo_name} not found or access denied.")
+                continue
+
+            logger.log_title(repo.name)
+            log_repositories_pr(repo, csv_name, token, start, finish, log_comments)
             if fork_flag:
-                for forked_repo in repo.get_forks():
+                # Получаем форки через оригинальный метод, так как его нет в обёртке(Добавить)
+                forked_repos = client.get_repo(repo._id).get_forks()
+                for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repositories_pr(
                         forked_repo, csv_name, token, start, finish, log_comments

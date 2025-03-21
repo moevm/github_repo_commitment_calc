@@ -1,7 +1,8 @@
 from utils import logger
 import pytz
 from time import sleep
-from github import Github, Repository, GithubException, PullRequest
+from github import Github, Repository
+import GitHubRepoAPI  # Импортируем обёртку
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -17,12 +18,13 @@ FIELDNAMES = (
     'branch',
 )
 
-
-def log_repository_commits(repository: Repository, csv_name, start, finish, branch):
+def log_repository_commits(client: Github, repository, csv_name, start, finish, branch):
     branches = []
     match branch:
         case 'all':
-            for branch in repository.get_branches():
+            api = GitHubRepoAPI(client)
+            branches = api.get_branches(repository)
+            for branch in branches:
                 branches.append(branch.name)
         case None:
             branches.append(repository.default_branch)
@@ -31,45 +33,52 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
 
     for branch in branches:
         print(f'Processing branch {branch}')
-        # TODO add support of since and until in https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_commits
-        for commit in repository.get_commits(sha=branch):
+        # Используем обёртку для получения коммитов
+        api = GitHubRepoAPI(repository._github)
+        commits = api.get_commits(repository)
+        for commit in commits:
             if (
-                commit.commit.author.date.astimezone(pytz.timezone(TIMEZONE)) < start
-                or commit.commit.author.date.astimezone(pytz.timezone(TIMEZONE))
-                > finish
+                commit.date.astimezone(pytz.timezone(TIMEZONE)) < start
+                or commit.date.astimezone(pytz.timezone(TIMEZONE)) > finish
             ):
                 continue
-            if commit.commit is not None:
-                nvl = lambda val: val or EMPTY_FIELD
-                commit_data = [
-                    repository.full_name,
-                    commit.commit.author.name,
-                    nvl(commit.author.login if commit.author else None),
-                    nvl(commit.commit.author.email),
-                    commit.commit.author.date,
-                    '; '.join([file.filename for file in commit.files]),
-                    commit.commit.sha,
-                    branch,
-                ]
-                info = dict(zip(FIELDNAMES, commit_data))
+            commit_data = [
+                repository.full_name,
+                commit.author.username,
+                commit.author.email or EMPTY_FIELD,
+                commit.date,
+                '; '.join([file.filename for file in commit.files]),
+                commit._id,
+                branch,
+            ]
+            info = dict(zip(FIELDNAMES, commit_data))
 
-                logger.log_to_csv(csv_name, FIELDNAMES, info)
-                logger.log_to_stdout(info)
+            logger.log_to_csv(csv_name, FIELDNAMES, info)
+            logger.log_to_stdout(info)
 
-                sleep(TIMEDELTA)
-
+            sleep(TIMEDELTA)
 
 def log_commits(
     client: Github, working_repos, csv_name, start, finish, branch, fork_flag
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    api = GitHubRepoAPI(client)  # Используем обёртку
+
+    for repo_name in working_repos:
         try:
-            logger.log_title(repo.full_name)
+            # Получаем репозиторий через обёртку
+            repo = api.get_repository(repo_name)
+            if not repo:
+                print(f"Repository {repo_name} not found or access denied.")
+                continue
+
+            logger.log_title(repo.name)
             log_repository_commits(repo, csv_name, start, finish, branch)
             if fork_flag:
-                for forked_repo in repo.get_forks():
+                # Получаем форки через оригинальный метод, так как его нет в обёртке(Нужно добавить)
+                forked_repos = client.get_repo(repo._id).get_forks()
+                for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repository_commits(forked_repo, csv_name, start, finish, branch)
                     sleep(TIMEDELTA)
