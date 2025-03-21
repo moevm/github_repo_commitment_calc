@@ -57,7 +57,7 @@ def get_contributors_stats(repository: Repository) -> dict:
     contributors_stats = dict()
 
     # Используем обёртку для получения коммитов
-    api = GitHubRepoAPI(repository._github)
+    api = GitHubRepoAPI.GitHubRepoAPI(repository._github)
     commits = api.get_commits(repository)
 
     for commit in commits:
@@ -81,7 +81,7 @@ def log_contributors(
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    api = GitHubRepoAPI(client)  # Используем обёртку
+    api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
 
     for repo in working_repos:
         try:

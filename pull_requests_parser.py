@@ -94,7 +94,7 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
 def log_repositories_pr(
     client: Github, repository: Repository, csv_name, token, start, finish, log_comments=False,
 ):
-    api = GitHubRepoAPI(client)
+    api = GitHubRepoAPI.GitHubRepoAPI(client)
     pulls = api.get_pull_requests(repository)
     for pull in pulls:
         if (
@@ -173,7 +173,7 @@ def log_pull_requests(
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    api = GitHubRepoAPI(client)  # Используем обёртку
+    api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
 
     for repo_name in working_repos:
         try:

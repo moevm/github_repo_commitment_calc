@@ -175,7 +175,7 @@ def log_repository_issues(client: Github, repository: Repository, csv_name, toke
 def log_issues(client: Github, working_repo, csv_name, token, start, finish, fork_flag):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    api = GitHubRepoAPI(client)  # Используем обёртку
+    api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
 
     for repo_name in working_repo:
         try:

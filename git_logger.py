@@ -19,7 +19,7 @@ def login(token):
         return client
 
 def get_next_repo(client: Github, repositories):
-    api = GitHubRepoAPI(client)  # Используем обёртку
+    api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
