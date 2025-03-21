@@ -51,11 +51,12 @@ class GithubClients:
                 client = client_tmp
                 max_remaining_limit = remaining_limit
 
+            sleep(TIMEDELTA)
+
         if client is None:
             raise Exception("No github-clients available")
 
         self.cur_client = client
-        print(client, max_remaining_limit)
         return client["client"]
 
 
