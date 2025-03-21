@@ -41,7 +41,7 @@ class GithubClients:
         max_remaining_limit = -1
 
         for client_tmp in self.clients:
-            (remaining_limit, limit) = client_tmp["client"].rate_limiting
+            remaining_limit, limit = client_tmp["client"].rate_limiting
 
             # можно добавить вывод износа токена
             # можно дополнительно проверять на 403 и временно пропускать эти токены,
