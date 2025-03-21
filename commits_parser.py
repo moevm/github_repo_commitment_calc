@@ -34,7 +34,7 @@ def log_repository_commits(client: Github, repository, csv_name, start, finish, 
     for branch in branches:
         print(f'Processing branch {branch}')
         # Используем обёртку для получения коммитов
-        api = GitHubRepoAPI(repository._github)
+        api = GitHubRepoAPI(client)
         commits = api.get_commits(repository)
         for commit in commits:
             if (
@@ -59,7 +59,7 @@ def log_repository_commits(client: Github, repository, csv_name, start, finish, 
             sleep(TIMEDELTA)
 
 def log_commits(
-    client: Github, working_repos, csv_name, start, finish, branch, fork_flag
+    client, working_repos, csv_name, start, finish, branch, fork_flag
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
