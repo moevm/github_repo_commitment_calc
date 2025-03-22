@@ -1,4 +1,5 @@
 from github import Github, GithubException, PullRequest
+from interface_wrapper import IRepositoryAPI, RepositoryFactory, Repository, User, Branch
 from time import sleep
 
 TIMEDELTA = 0.05
@@ -32,7 +33,8 @@ class GithubClients:
 
     def _init_clients(self, tokens: list[str]) -> list[dict]:
         clients = [{"client": login(token), "token": token} for token in tokens]
-        # нужно ли нам рейзить ошибку в случае 403, или просто временно пропускать эти токены?
+        for c in clients:
+            c["api"] = RepositoryFactory.create_api("github", c["client"])
 
         return clients
 
@@ -74,10 +76,12 @@ def get_next_repo(clients: GithubClients, repositories):
             exit(1)
         else:
             print(cur_client['token'])
-            yield repo, cur_client['token']
+            yield Repository(_id=repo.full_name,name=repo.name,url=repo.html_url, default_branch=Branch(name=repo.default_branch, last_commit=None), owner=cur_client['api'].get_user_data(repo.owner)), cur_client['token']
 
 
 def get_assignee_story(github_object):
+    # TODO
+    return ""
     assignee_result = ""
     events = (
         github_object.get_issue_events()

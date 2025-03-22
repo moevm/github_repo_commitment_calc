@@ -1,6 +1,6 @@
 from utils import logger
 from time import sleep
-from github import Github, Repository, GithubException, PullRequest
+from interface_wrapper import IRepositoryAPI, Repository
 
 FIELDNAMES = (
     'repository name',
@@ -22,11 +22,11 @@ def log_inviter(repo, invite, writer):
     print(invite_info)
 
 
-def log_repository_invitations(repository: Repository, csv_name):
-    invitations = repository.get_pending_invitations()
+def log_repository_invitations(client: IRepositoryAPI, repository: Repository, csv_name):
+    invitations = client.get_invites(repository)
     for invite in invitations:
         invite_info = {
-            'repository name': repository.full_name,
+            'repository name': repository.name,
             'invited login': invite.invitee.login,
             'invite creation date': invite.created_at.strftime("%d/%m/%Y, %H:%M:%S"),
             'invitation url': invite.html_url,
@@ -36,12 +36,12 @@ def log_repository_invitations(repository: Repository, csv_name):
         sleep(TIMEDELTA)
 
 
-def log_invitations(working_repos, csv_name):
+def log_invitations(client: IRepositoryAPI, working_repos, csv_name):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repos:
-        logger.log_title(repo.full_name)
+        logger.log_title(repo.name)
         try:
-            log_repository_invitations(repo, csv_name)
+            log_repository_invitations(client, repo, csv_name)
         except Exception as e:
             print(e)

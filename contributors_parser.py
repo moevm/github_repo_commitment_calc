@@ -1,7 +1,7 @@
 from utils import logger
 from time import sleep
 from typing import Generator
-from github import Github, Repository, GithubException
+from interface_wrapper import IRepositoryAPI, Repository, User
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -22,24 +22,23 @@ FIELDNAMES = (
 )
 
 
-def log_repository_contributors(repository: Repository, csv_name: str):
-    contributors_stats = get_contributors_stats(repository)
+def log_repository_contributors(client: IRepositoryAPI, repository: Repository, csv_name: str):
+    contributors_stats = get_contributors_stats(client, repository)
 
     nvl = lambda val: val or EMPTY_FIELD
 
     for contributor_stat in contributors_stats.values():
         contributor = contributor_stat["contributor_object"]
-        contributor_permissons = repository.get_collaborator_permission(contributor)
+        contributor_permissions = client.get_collaborator_permission(repository, contributor)
 
         info_tmp = {
-            'repository name': repository.full_name,
+            'repository name': repository.name,
             'login': contributor.login,
-            'name': nvl(contributor.name),
+            'name': nvl(contributor.username),
             'email': nvl(contributor_stat['email']),
             'url': contributor.html_url,
-            'permissions': nvl(contributor_permissons),
+            'permissions': nvl(contributor_permissions),
             'total_commits': contributor_stat['total_commits'],
-            'id': contributor.id,
             'node_id': contributor.node_id,
             'type': contributor.type,
             'bio': nvl(contributor.bio),
@@ -51,17 +50,17 @@ def log_repository_contributors(repository: Repository, csv_name: str):
 
         sleep(TIMEDELTA)
 
-
-def get_contributors_stats(repository: Repository) -> dict:
+def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> dict:
     contributors_stats = dict()
+    commits = client.get_commits(repository, False)
 
-    for commit in repository.get_commits():
+    for commit in commits:
         contributor = commit.author
 
         if not contributor.login in contributors_stats:
             contributors_stats[contributor.login] = {
                 'total_commits': 0,
-                'email': commit.commit.author.email,
+                'email': contributor.email,
                 'contributor_object': contributor,
             }
 
@@ -72,20 +71,20 @@ def get_contributors_stats(repository: Repository) -> dict:
     return contributors_stats
 
 
-def log_contributors(working_repos: Generator, csv_name: str, fork_flag: bool):
+def log_contributors(client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repos:
         try:
-            logger.log_title(repo.full_name)
-            log_repository_contributors(repo, csv_name)
+            logger.log_title(repo.name)
+            log_repository_contributors(client, repo, csv_name)
 
             if fork_flag:
-                for forked_repo in repo.get_forks():
-                    logger.log_title("FORKED:", forked_repo.full_name)
-                    log_repository_contributors(forked_repo, csv_name)
+                for forked_repo in client.get_forks(repo):
+                    logger.log_title("FORKED:", forked_repo.name)
+                    log_repository_contributors(client, forked_repo, csv_name)
                     sleep(TIMEDELTA)
 
-        except GithubException as e:
+        except Exception as e:
             print(e)
             exit(1)
