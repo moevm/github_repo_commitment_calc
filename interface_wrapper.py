@@ -95,6 +95,11 @@ class WikiPage:
     content: str
 
 
+class IClients(ABC):
+    @abstractmethod
+    def get_next_client(self): ...
+
+
 # Интерфейс API
 class IRepositoryAPI(ABC):
 

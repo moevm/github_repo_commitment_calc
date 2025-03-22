@@ -151,7 +151,7 @@ def main():
 
         if args.commits:
             commits_parser.log_commits(
-                working_repos, csv_name, start, finish, args.branch, fork_flag
+                clients, working_repos, csv_name, start, finish, args.branch, fork_flag
             )
         if args.pull_requests:
             pull_requests_parser.log_pull_requests(
@@ -163,13 +163,13 @@ def main():
                 log_pr_comments,
             )
         if args.issues:
-            issues_parser.log_issues(working_repos, csv_name, start, finish, fork_flag)
+            issues_parser.log_issues(clients, working_repos, csv_name, start, finish, fork_flag)
         if args.invites:
-            invites_parser.log_invitations(working_repos, csv_name)
+            invites_parser.log_invitations(clients, working_repos, csv_name)
         if args.wikis:
             wikipars.wikiparser(clients, repositories, path_drepo, csv_name)
         if args.contributors:
-            contributors_parser.log_contributors(working_repos, csv_name, fork_flag)
+            contributors_parser.log_contributors(clients, working_repos, csv_name, fork_flag)
         if args.export_google_sheets:
             export_sheets.write_data_to_table(
                 csv_name, args.google_token, args.table_id, args.sheet_id

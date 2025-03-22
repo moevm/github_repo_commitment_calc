@@ -1,7 +1,7 @@
 from utils import logger
 from time import sleep
 from typing import Generator
-from interface_wrapper import IRepositoryAPI, Repository
+from interface_wrapper import IRepositoryAPI, Repository, IClients
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -78,12 +78,13 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
 
 
 def log_contributors(
-    client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool
+    clients: IClients, working_repos: Generator, csv_name: str, fork_flag: bool
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo, token in working_repos:
+    for repo in working_repos:
         try:
+            client = clients.get_next_client()
             logger.log_title(repo.full_name)
             log_repository_contributors(repo, csv_name)
 
@@ -93,6 +94,6 @@ def log_contributors(
                     log_repository_contributors(client, forked_repo, csv_name)
                     sleep(TIMEDELTA)
 
-        except e:
+        except Exception as e:
             print(e)
             exit(1)

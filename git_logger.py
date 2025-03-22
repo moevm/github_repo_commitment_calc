@@ -1,18 +1,18 @@
 from time import sleep
-from interface_wrapper import IRepositoryAPI, RepositoryFactory
+from interface_wrapper import IRepositoryAPI, RepositoryFactory, IClients
 
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
 
 def login(token):
-    try:
+    if 1:
         client = RepositoryFactory.create_api("github", token)
-    except Exception as err:
-        print(f'Github: Connect: error {err}')
-        print('Github: Connect: user could not be authenticated please try again.')
-        exit(1)
-    else:
+    # except Exception as err:
+    #     print(f'Github: Connect: error {err}')
+    #     print('Github: Connect: user could not be authenticated please try again.')
+    #     exit(1)
+    # else:
         return client
 
 
@@ -23,10 +23,11 @@ def get_tokens_from_file(tokens_path: str) -> list[str]:
     return tokens
 
 
-class GithubClients:
+class GithubClients(IClients):
     def __init__(self, tokens: list[str]):
         self.clients = self._init_clients(tokens)
         self.cur_client = None
+        self.last_client = -1
 
     def _init_clients(self, tokens: list[str]) -> list[dict]:
         clients = [{"client": login(token), "token": token} for token in tokens]
@@ -35,44 +36,30 @@ class GithubClients:
         return clients
 
     def get_next_client(self):
-        client = None
-        max_remaining_limit = -1
-
-        for client_tmp in self.clients:
-            remaining_limit, limit = client_tmp["client"].rate_limiting
-
-            # можно добавить вывод износа токена
-            # можно дополнительно проверять на 403 и временно пропускать эти токены,
-            # либо завести константу "минимальный коэффициент износа" и не трогать "изношенные" токены
-
-            if remaining_limit > max_remaining_limit:
-                client = client_tmp
-                max_remaining_limit = remaining_limit
-
-            sleep(TIMEDELTA)
-
-        if client is None:
+        if not self.clients:
             raise Exception("No github-clients available")
 
-        self.cur_client = client
-        return client
+        self.last_client = (self.last_client + 1) % len(self.clients)
+        self.cur_client = self.clients[self.last_client]
+        return self.cur_client
 
 
-def get_next_repo(client: IRepositoryAPI, repositories):
+
+def get_next_repo(clients: IClients, repositories):
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
     for repo_name in list_repos:
-        try:
+        if 1:
             cur_client = clients.get_next_client()
             repo = cur_client['client'].get_repository(repo_name)
             if not repo:
                 raise Exception(f"Repository {repo_name} not found.")
-        except Exception as err:
-            print(f'Github: Connect: error {err}')
-            print(f'Github: Connect: failed to load repository "{repo_name}"')
-            exit(1)
-        else:
+        # except Exception as err:
+        #     print(f'Github: Connect: error {err}')
+        #     print(f'Github: Connect: failed to load repository "{repo_name}"')
+        #     exit(1)
+        # else:
             yield repo
 
 

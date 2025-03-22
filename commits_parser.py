@@ -1,7 +1,7 @@
 from utils import logger
 import pytz
 from time import sleep
-from interface_wrapper import IRepositoryAPI
+from interface_wrapper import IRepositoryAPI, IClients
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -60,12 +60,13 @@ def log_repository_commits(
 
 
 def log_commits(
-    client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
+    clients: IClients, working_repos, csv_name, start, finish, branch, fork_flag
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo, token in working_repos:
+    for repo in working_repos:
         try:
+            client = clients.get_next_client()
             logger.log_title(repo.name)
             log_repository_commits(client, repo, csv_name, start, finish, branch)
             if fork_flag:

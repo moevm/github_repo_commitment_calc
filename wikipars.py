@@ -22,7 +22,7 @@ def log_wiki_to_csv(info, csv_name):
         writer.writerow(info)
 
 
-def wikiparser(client, repositories, path_drepo, csv_name):
+def wikiparser(clients, repositories, path_drepo, csv_name):
     with open(csv_name, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(WIKI_FIELDNAMES)
