@@ -4,7 +4,7 @@ import requests
 import json
 from time import sleep
 from git_logger import get_assignee_story
-from github import Github, Repository, GithubException, PullRequest
+from interface_wrapper import IRepositoryAPI, Repository
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -34,8 +34,9 @@ FIELDNAMES = (
     'milestone',
 )
 
-
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
+    # TODO как-то заменить
+    return
     access_token = token
     repo_owner = repo_owner.login
     # Формирование запроса GraphQL
@@ -109,9 +110,9 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
             return ';'.join(list_url)
     return 'Empty field'
 
-
-def log_repository_issues(repository: Repository, csv_name, token, start, finish):
-    for issue in repository.get_issues(state='all'):
+def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish):
+    issues = client.get_issues(repository)
+    for issue in issues:
         if (
             issue.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
             or issue.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
@@ -120,19 +121,19 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
         nvl = lambda val: val or EMPTY_FIELD
         get_info = lambda obj, attr: EMPTY_FIELD if obj is None else getattr(obj, attr)
         info_tmp = {
-            'repository name': repository.full_name,
-            'number': issue.number,
+            'repository name': repository.name,
+            'number': issue._id,
             'title': issue.title,
             'state': issue.state,
             'task': issue.body,
             'created at': issue.created_at,
-            'creator name': get_info(issue.user, 'name'),
-            'creator login': get_info(issue.user, 'login'),
-            'creator email': get_info(issue.user, 'email'),
+            'creator name': issue.user.username,
+            'creator login': issue.user.login,
+            'creator email': issue.user.email,
             'closed at': nvl(issue.closed_at),
-            'closer name': get_info(issue.closed_by, 'name'),
-            'closer login': get_info(issue.closed_by, 'login'),
-            'closer email': get_info(issue.closed_by, 'email'),
+            'closer name': issue.closed_by.username if issue.closed_by else None,
+            'closer login': issue.closed_by.login if issue.closed_by else None,
+            'closer email': issue.closed_by.email if issue.closed_by else None,
             'comment body': EMPTY_FIELD,
             'comment created at': EMPTY_FIELD,
             'comment author name': EMPTY_FIELD,
@@ -141,27 +142,27 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
             'assignee story': get_assignee_story(issue),
             'connected pull requests': (
                 EMPTY_FIELD
-                if issue.number is None
+                if issue._id is None
                 else get_connected_pulls(
-                    issue.number, repository.owner, repository.name, token
+                    issue._id, repository.owner, repository.name, token
                 )
             ),
             'labels': (
                 EMPTY_FIELD
                 if issue.labels is None
-                else ';'.join([label.name for label in issue.labels])
+                else ';'.join([label for label in issue.labels])
             ),
             'milestone': get_info(issue.milestone, 'title'),
         }
-
-        if issue.get_comments().totalCount > 0:
-            for comment in issue.get_comments():
+        comments = client.get_comments(repository, issue)
+        if len(comments) > 0:
+            for comment in comments:
                 info = info_tmp
                 info['comment body'] = comment.body
                 info['comment created at'] = comment.created_at
-                info['comment author name'] = comment.user.name
-                info['comment author login'] = comment.user.login
-                info['comment author email'] = comment.user.email
+                info['comment author name'] = comment.author.username
+                info['comment author login'] = comment.author.login
+                info['comment author email'] = comment.author.email
 
                 logger.log_to_csv(csv_name, FIELDNAMES, info)
                 logger.log_to_stdout(info)
@@ -171,19 +172,19 @@ def log_repository_issues(repository: Repository, csv_name, token, start, finish
 
         sleep(TIMEDELTA)
 
-
-def log_issues(client: Github, working_repo, csv_name, token, start, finish, fork_flag):
+def log_issues(client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo in working_repo:
         try:
-            logger.log_title(repo.full_name)
-            log_repository_issues(repo, csv_name, token, start, finish)
+            logger.log_title(repo.name)
+            log_repository_issues(client, repo, csv_name, token, start, finish)
             if fork_flag:
-                for forked_repo in repo.get_forks():
-                    logger.log_title("FORKED:", forked_repo.full_name)
-                    log_repository_issues(forked_repo, csv_name, token, start, finish)
+                forked_repos = client.get_forks(repo)
+                for forked_repo in forked_repos:
+                    logger.log_title("FORKED:", forked_repo.name)
+                    log_repository_issues(client, forked_repo, csv_name, token, start, finish)
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:
-            print(e)
+            print("log_issues exception:", e)
