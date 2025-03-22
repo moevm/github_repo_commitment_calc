@@ -1,7 +1,7 @@
 from utils import logger
 from time import sleep
 from typing import Generator
-from interface_wrapper import IRepositoryAPI, Repository
+from github import Github, Repository, GithubException
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -21,8 +21,9 @@ FIELDNAMES = (
     'site_admin',
 )
 
-def log_repository_contributors(client: IRepositoryAPI, repository: Repository, csv_name: str):
-    contributors_stats = get_contributors_stats(client, repository)
+
+def log_repository_contributors(repository: Repository, csv_name: str):
+    contributors_stats = get_contributors_stats(repository)
 
     nvl = lambda val: val or EMPTY_FIELD
 
@@ -50,13 +51,11 @@ def log_repository_contributors(client: IRepositoryAPI, repository: Repository, 
 
         sleep(TIMEDELTA)
 
-def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> dict:
+
+def get_contributors_stats(repository: Repository) -> dict:
     contributors_stats = dict()
 
-    # Используем обёртку для получения коммитов
-    commits = client.get_commits(repository)
-
-    for commit in commits:
+    for commit in repository.get_commits():
         contributor = commit.author
 
         if not contributor.login in contributors_stats:
@@ -72,8 +71,9 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
 
     return contributors_stats
 
+
 def log_contributors(
-    client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool
+    client: Github, working_repos: Generator, csv_name: str, fork_flag: bool
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
@@ -83,11 +83,11 @@ def log_contributors(
             log_repository_contributors(repo, csv_name)
 
             if fork_flag:
-                for forked_repo in client.get_forks():
-                    logger.log_title("FORKED:", forked_repo.name)
-                    log_repository_contributors(client, forked_repo, csv_name)
+                for forked_repo in repo.get_forks():
+                    logger.log_title("FORKED:", forked_repo.full_name)
+                    log_repository_contributors(forked_repo, csv_name)
                     sleep(TIMEDELTA)
 
-        except e:
+        except GithubException as e:
             print(e)
             exit(1)
