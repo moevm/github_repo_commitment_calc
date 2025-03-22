@@ -1,5 +1,9 @@
 from github import Github, GithubException, PullRequest
-from interface_wrapper import IRepositoryAPI, RepositoryFactory, Repository, User, Branch
+from interface_wrapper import (
+    RepositoryFactory,
+    Repository,
+    Branch,
+)
 from time import sleep
 
 TIMEDELTA = 0.05
@@ -76,7 +80,13 @@ def get_next_repo(clients: GithubClients, repositories):
             exit(1)
         else:
             print(cur_client['token'])
-            yield Repository(_id=repo.full_name,name=repo.name,url=repo.html_url, default_branch=Branch(name=repo.default_branch, last_commit=None), owner=cur_client['api'].get_user_data(repo.owner)), cur_client['token']
+            yield Repository(
+                _id=repo.full_name,
+                name=repo.name,
+                url=repo.html_url,
+                default_branch=Branch(name=repo.default_branch, last_commit=None),
+                owner=cur_client['api'].get_user_data(repo.owner),
+            ), cur_client['token']
 
 
 def get_assignee_story(github_object):

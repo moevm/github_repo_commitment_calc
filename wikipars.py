@@ -59,7 +59,9 @@ def wikiparser(client, repositories, path_drepo, csv_name):
 
         print("=" * 20, name_rep, "=" * 20)
         # Вывод изменений
-        EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"  # Хэш пустого дерева для сравнения с первым коммитом. Способ был найден здесь: https://stackoverflow.com/questions/33916648/get-the-diff-details-of-first-commit-in-gitpython
+        # Хэш пустого дерева для сравнения с первым коммитом. Способ был найден здесь:
+        # https://stackoverflow.com/questions/33916648/get-the-diff-details-of-first-commit-in-gitpython
+        EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
         wiki_commits = repo.iter_commits(all=True)
         activity = {
             "A": "Страница добавлена",

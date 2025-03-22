@@ -15,6 +15,7 @@ class Contributor:
     username: str
     email: str
 
+
 @dataclass
 class User:
     _id: int
@@ -27,6 +28,7 @@ class User:
     bio: str
     site_admin: bool
 
+
 @dataclass
 class Commit:
     _id: str
@@ -34,6 +36,7 @@ class Commit:
     author: User
     date: datetime
     files: list[str]
+
 
 @dataclass
 class Branch:
@@ -49,6 +52,7 @@ class Repository:
     default_branch: Branch
     owner: User
 
+
 @dataclass
 class Issue:
     _id: str
@@ -61,6 +65,7 @@ class Issue:
     closed_by: User
     labels: list[str]
     milestone: str
+
 
 @dataclass
 class PullRequest:
@@ -79,6 +84,7 @@ class PullRequest:
     labels: list[str]
     milestone: str
 
+
 @dataclass
 class Invite:
     _id: int
@@ -86,23 +92,26 @@ class Invite:
     created_at: datetime
     html_url: str
 
+
 @dataclass
 class Comment:
     body: str
     created_at: datetime
     author: User
 
+
 @dataclass
 class WikiPage:
     title: str
     content: str
+
 
 # Интерфейс API
 class IRepositoryAPI(ABC):
 
     @abstractmethod
     def get_user_data(self, user) -> User:
-         pass
+        pass
 
     @abstractmethod
     def get_repository(self, id: str) -> Repository | None:
@@ -155,11 +164,13 @@ class IRepositoryAPI(ABC):
     def get_invites(self, repo: Repository) -> list[Invite]:
         pass
 
+
 # Фабрика для создания API
 class RepositoryFactory:
     @staticmethod
     def create_api(source: str, client) -> IRepositoryAPI:
         from GitHubRepoAPI import GitHubRepoAPI
+
         if client is None:
             raise ValueError("Client cannot be None")
         if source == 'github':

@@ -42,7 +42,11 @@ def parse_args():
         '--list',
         type=str,
         required=True,
-        help='Path to the file containing the list of repositories. Repositories should be separated by a line break. Names should be in the format <organization or owner>/<name> ',
+        help=(
+            'Path to the file containing the list of repositories. '
+            'Repositories should be separated by a line break. '
+            'Names should be in the format <organization or owner>/<name> '
+        ),
     )
     parser.add_argument(
         "--download_repos",
@@ -75,7 +79,11 @@ def parse_args():
         '--branch',
         type=str,
         required=False,
-        help='branch to select commits, by default use "default" repository branch, use "all" to get all commits from all branches',
+        help=(
+            'branch to select commits, '
+            'by default use "default" repository branch, '
+            'use "all" to get all commits from all branches',
+        ),
         default=None,
     )
     parser.add_argument(
@@ -166,13 +174,21 @@ def main():
                 log_pr_comments,
             )
         if args.issues:
-            issues_parser.log_issues(client, working_repos, csv_name, tokens[0], start, finish, fork_flag)
+            issues_parser.log_issues(
+                client, working_repos, csv_name, tokens[0], start, finish, fork_flag
+            )
         if args.invites:
-            invites_parser.log_invitations(client, working_repos, csv_name, )
+            invites_parser.log_invitations(
+                client,
+                working_repos,
+                csv_name,
+            )
         if args.wikis:
             wikipars.wikiparser(clients, repositories, path_drepo, csv_name)
         if args.contributors:
-            contributors_parser.log_contributors(client, working_repos, csv_name, fork_flag)
+            contributors_parser.log_contributors(
+                client, working_repos, csv_name, fork_flag
+            )
         if args.export_google_sheets:
             export_sheets.write_data_to_table(
                 csv_name, args.google_token, args.table_id, args.sheet_id

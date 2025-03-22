@@ -1,7 +1,7 @@
 from utils import logger
 from time import sleep
 from typing import Generator
-from interface_wrapper import IRepositoryAPI, Repository, User
+from interface_wrapper import IRepositoryAPI, Repository
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -22,14 +22,19 @@ FIELDNAMES = (
 )
 
 
-def log_repository_contributors(client: IRepositoryAPI, repository: Repository, csv_name: str):
+def log_repository_contributors(
+    client: IRepositoryAPI, repository: Repository, csv_name: str
+):
     contributors_stats = get_contributors_stats(client, repository)
 
-    nvl = lambda val: val or EMPTY_FIELD
+    def nvl(val):
+        return val or EMPTY_FIELD
 
     for contributor_stat in contributors_stats.values():
         contributor = contributor_stat["contributor_object"]
-        contributor_permissions = client.get_collaborator_permission(repository, contributor)
+        contributor_permissions = client.get_collaborator_permission(
+            repository, contributor
+        )
 
         info_tmp = {
             'repository name': repository.name,
@@ -50,6 +55,7 @@ def log_repository_contributors(client: IRepositoryAPI, repository: Repository, 
 
         sleep(TIMEDELTA)
 
+
 def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> dict:
     contributors_stats = dict()
     commits = client.get_commits(repository, False)
@@ -57,7 +63,7 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
     for commit in commits:
         contributor = commit.author
 
-        if not contributor.login in contributors_stats:
+        if contributor.login not in contributors_stats:
             contributors_stats[contributor.login] = {
                 'total_commits': 0,
                 'email': contributor.email,
@@ -71,7 +77,9 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
     return contributors_stats
 
 
-def log_contributors(client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool):
+def log_contributors(
+    client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool
+):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repos:

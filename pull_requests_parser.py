@@ -3,8 +3,8 @@ import pytz
 import requests
 import json
 from time import sleep
-from git_logger import get_assignee_story, GithubClients
-from interface_wrapper import IRepositoryAPI, PullRequest, Repository
+from git_logger import get_assignee_story
+from interface_wrapper import IRepositoryAPI, Repository
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -39,7 +39,7 @@ FIELDNAMES = (
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
-    #TODO как-то заменить
+    # TODO как-то заменить
     return
     access_token = token
     repo_owner = repo_owner.login
@@ -95,8 +95,20 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
 
 
 def log_repositories_pr(
-    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish, log_comments=False
+    client: IRepositoryAPI,
+    repository: Repository,
+    csv_name,
+    token,
+    start,
+    finish,
+    log_comments=False,
 ):
+    def nvl(val):
+        return val or EMPTY_FIELD
+
+    def get_info(obj, attr):
+        return EMPTY_FIELD if obj is None else getattr(obj, attr)
+
     pulls = client.get_pull_requests(repository)
     for pull in pulls:
         if (
@@ -104,8 +116,7 @@ def log_repositories_pr(
             or pull.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
         ):
             continue
-        nvl = lambda val: val or EMPTY_FIELD
-        get_info = lambda obj, attr: EMPTY_FIELD if obj is None else getattr(obj, attr)
+
         info_tmp = {
             'repository name': repository.name,
             'title': pull.title,
@@ -177,13 +188,21 @@ def log_pull_requests(
     for repo, token in working_repos:
         try:
             logger.log_title(repo.name)
-            log_repositories_pr(client, repo, csv_name, token, start, finish, log_comments)
+            log_repositories_pr(
+                client, repo, csv_name, token, start, finish, log_comments
+            )
             if fork_flag:
                 forked_repos = client.get_repo(repo._id).get_forks()
                 for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repositories_pr(
-                        client, forked_repo, csv_name, token, start, finish, log_comments
+                        client,
+                        forked_repo,
+                        csv_name,
+                        token,
+                        start,
+                        finish,
+                        log_comments,
                     )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
