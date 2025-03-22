@@ -9,6 +9,17 @@ on:
 jobs:
 
   smoke-test:
+    strategy:
+      matrix:
+        args:
+          - "--invites"
+          - "--commits"
+          - "--pull_requests"
+          - "--issues"
+          - "--wikis"
+          - "--contributors"
+          - "--forks_include"
+          - "--pr_comments"
 
     runs-on: ubuntu-latest
 
@@ -16,13 +27,14 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Create list.txt
-      run: echo "OSLL/github_repo_commitment_calc" > list.txt
+      run: echo "moevm/github_repo_commitment_calc" > list.txt
 
     - name: Install dependencies
       run: pip install -r requirements.txt
 
     - name: Run test
-      run: python3 main.py --commits --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out.csv --branch master
+      run: |
+        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out1.csv --branch master
 
     - name: Check if out.csv exists
       run: ls out.csv
