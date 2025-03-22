@@ -8,8 +8,6 @@ from interface_wrapper import (
     WikiPage,
     Branch,
     IRepositoryAPI,
-    User,
-    Comment
 )
 from github import Github
 
@@ -17,12 +15,12 @@ from github import Github
 class GitHubRepoAPI(IRepositoryAPI):
 
     def __init__(self, client):
-        self.client = Github(client)
+        self.client = client
 
     def get_repository(self, id: str) -> Repository | None:
         try:
             repo = self.client.get_repo(id)
-            return Repository(_id=repo.full_name, name=repo.name, url=repo.html_url, default_branch=Branch(name=repo.default_branch, last_commit=None), owner=User(login=repo.owner.login,username=repo.owner.name,email=repo.owner.email))
+            return Repository(_id=repo.full_name, name=repo.name, url=repo.html_url)
         except Exception as e:
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
             return None
@@ -38,10 +36,6 @@ class GitHubRepoAPI(IRepositoryAPI):
                         c.author.login if c.author else "unknown", c.commit.author.email
                     ),
                     date=c.commit.author.date,
-                    files=[
-                        f.filename
-                            for f in c.files
-                    ]
                 )
                 for c in commits
             ]
@@ -68,17 +62,8 @@ class GitHubRepoAPI(IRepositoryAPI):
                 Issue(
                     _id=i.number,
                     title=i.title,
+                    author=Contributor(i.user.login, i.user.email or ""),
                     state=i.state,
-                    created_at=i.created_at,
-                    closed_at=i.closed_at,
-                    closed_by=User(login=i.closed_by.login,username=i.closed_by.name,email=i.closed_by.email) if i.closed_by else None,
-                    body=i.body,
-                    user=User(login=i.user.login,username=i.user.name,email=i.user.email),
-                    labels= [
-                        l.name
-                        for l in i.labels
-                    ],
-                    milestone=i.milestone.title if i.milestone else None
                 )
                 for i in issues
             ]
@@ -93,24 +78,8 @@ class GitHubRepoAPI(IRepositoryAPI):
                 PullRequest(
                     _id=p.number,
                     title=p.title,
-                    author=User(login=p.user.login, username=p.user.name, email=p.user.email),
+                    author=Contributor(p.user.login, p.user.email or ""),
                     state=p.state,
-                    created_at=p.created_at,
-                    head_label=p.head.label,
-                    base_label=p.base.label,
-                    head_ref=p.head.ref,
-                    base_ref=p.base.ref,
-                    merged_by=User(login=p.merged_by.login, username=p.merged_by.name, email=p.merged_by.email) if p.merged_by else None,
-                    files=[
-                        f.filename
-                            for f in p.get_files()
-                    ],
-                    issue_url=p.issue_url,
-                    labels= [
-                        l.name
-                        for l in p.labels
-                    ],
-                    milestone=p.milestone.title if p.milestone else None
                 )
                 for p in pulls
             ]
@@ -153,39 +122,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             return []
 
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
-        return
-
-    def get_forks(self, repo: Repository) -> list[Repository]:
-        repo_client = self.client.get_repo(repo._id)
-        result = []
-        for r in repo_client.get_forks():
-            result.append(Repository(_id=repo.full_name, name=repo.name, url=repo.html_url))
-        return result
-
-    def get_comments(self, repo, obj) -> list[Comment]:
-        result = []
-        if type(obj) == Issue:
-            # TODO оптимизировать
-            issues = self.client.get_repo(repo._id).get_issues(state='all')
-            issue = None
-            for i in issues:
-                if i.number == obj._id:
-                    issue = i
-                    break
-            for c in issue.get_comments():
-                result.append(Comment(body=c.body,created_at=c.created_at,author=User(login=c.user.login,username=c.user.name,email=c.user.email)))
-        elif type(obj) == PullRequest:
-            # TODO оптимизировать
-            pulls = self.client.get_repo(repo._id).get_pulls(state='all')
-            pull = None
-            for p in pulls:
-                if p.number == obj._id:
-                    pull = p
-                    break
-            for c in pull.get_comments():
-                result.append(Comment(body=c.body,created_at=c.created_at,author=User(login=c.user.login,username=c.user.name,email=c.user.email)))
-
-        return result
+        pass
 
 
 # Точка входа для тестирования
