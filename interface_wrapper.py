@@ -11,16 +11,19 @@ logging.basicConfig(
 
 # Модельные классы
 
+
 @dataclass
 class Contributor:
     username: str
     email: str
+
 
 @dataclass
 class User:
     login: str
     username: str
     email: str
+
 
 @dataclass
 class Commit:
@@ -29,6 +32,7 @@ class Commit:
     author: Contributor
     date: datetime
     files: list[str]
+
 
 @dataclass
 class Branch:
@@ -44,6 +48,7 @@ class Repository:
     default_branch: Branch
     owner: User
 
+
 @dataclass
 class Issue:
     _id: str
@@ -57,6 +62,7 @@ class Issue:
     labels: list[str]
     milestone: str
     files: list[str]
+
 
 @dataclass
 class PullRequest:
@@ -81,6 +87,7 @@ class Comment:
     body: str
     created_at: datetime
     author: User
+
 
 @dataclass
 class WikiPage:
@@ -140,6 +147,7 @@ class RepositoryFactory:
     @staticmethod
     def create_api(source, client) -> IRepositoryAPI:
         from GitHubRepoAPI import GitHubRepoAPI
+
         if client is None:
             raise ValueError("Client cannot be None")
         if source == 'github':

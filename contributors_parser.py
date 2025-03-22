@@ -21,7 +21,10 @@ FIELDNAMES = (
     'site_admin',
 )
 
-def log_repository_contributors(client: IRepositoryAPI, repository: Repository, csv_name: str):
+
+def log_repository_contributors(
+    client: IRepositoryAPI, repository: Repository, csv_name: str
+):
     contributors_stats = get_contributors_stats(client, repository)
 
     nvl = lambda val: val or EMPTY_FIELD
@@ -50,6 +53,7 @@ def log_repository_contributors(client: IRepositoryAPI, repository: Repository, 
 
         sleep(TIMEDELTA)
 
+
 def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> dict:
     contributors_stats = dict()
 
@@ -71,6 +75,7 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
         sleep(TIMEDELTA)
 
     return contributors_stats
+
 
 def log_contributors(
     client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool

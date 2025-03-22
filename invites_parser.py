@@ -4,6 +4,7 @@ from interface_wrapper import IRepositoryAPI, PullRequest, Repository
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
+
 def login(token):
     client = Github(login_or_token=token)
 
@@ -16,6 +17,7 @@ def login(token):
         exit(1)
     else:
         return client
+
 
 def get_next_repo(client: IRepositoryAPI, repositories):
     api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
@@ -31,6 +33,7 @@ def get_next_repo(client: IRepositoryAPI, repositories):
             exit(1)
         else:
             yield repo
+
 
 def get_assignee_story(github_object):
     assignee_result = ""

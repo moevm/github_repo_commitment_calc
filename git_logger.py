@@ -4,6 +4,7 @@ from interface_wrapper import IRepositoryAPI, RepositoryFactory
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
+
 def login(token):
     try:
         client = RepositoryFactory.create_api("github", token)
@@ -74,8 +75,9 @@ def get_next_repo(client: IRepositoryAPI, repositories):
         else:
             yield repo
 
+
 def get_assignee_story(github_object):
-    #TODO
+    # TODO
     return ""
     assignee_result = ""
     events = (

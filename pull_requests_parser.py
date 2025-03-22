@@ -39,8 +39,9 @@ FIELDNAMES = (
     'milestone',
 )
 
+
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
-    #TODO как-то заменить
+    # TODO как-то заменить
     return
     access_token = token
     repo_owner = repo_owner.login
@@ -94,8 +95,15 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
         list_issues_url.append(issue_node["url"])
     return ';'.join(list_issues_url)
 
+
 def log_repositories_pr(
-    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish, log_comments=False,
+    client: IRepositoryAPI,
+    repository: Repository,
+    csv_name,
+    token,
+    start,
+    finish,
+    log_comments=False,
 ):
     pulls = client.get_pull_requests(repository)
     for pull in pulls:
@@ -162,6 +170,7 @@ def log_repositories_pr(
             logger.log_to_stdout(info_tmp)
         sleep(TIMEDELTA)
 
+
 def log_pull_requests(
     client: IRepositoryAPI,
     working_repos,
@@ -176,14 +185,22 @@ def log_pull_requests(
     for repo, token in working_repos:
         try:
             logger.log_title(repo.name)
-            log_repositories_pr(client, repo, csv_name, token, start, finish, log_comments)
+            log_repositories_pr(
+                client, repo, csv_name, token, start, finish, log_comments
+            )
             if fork_flag:
                 # Получаем форки через оригинальный метод, так как его нет в обёртке(Добавить)
                 forked_repos = client.get_repo(repo._id).get_forks()
                 for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repositories_pr(
-                        client, forked_repo, csv_name, token, start, finish, log_comments
+                        client,
+                        forked_repo,
+                        csv_name,
+                        token,
+                        start,
+                        finish,
+                        log_comments,
                     )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)

@@ -17,7 +17,10 @@ FIELDNAMES = (
     'branch',
 )
 
-def log_repository_commits(client: IRepositoryAPI, repository, csv_name, start, finish, branch):
+
+def log_repository_commits(
+    client: IRepositoryAPI, repository, csv_name, start, finish, branch
+):
     branches = []
     match branch:
         case 'all':
@@ -55,8 +58,9 @@ def log_repository_commits(client: IRepositoryAPI, repository, csv_name, start, 
 
             sleep(TIMEDELTA)
 
+
 def log_commits(
-        client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
+    client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 

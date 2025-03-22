@@ -34,6 +34,7 @@ FIELDNAMES = (
     'milestone',
 )
 
+
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
     # TODO как-то заменить
     return
@@ -110,7 +111,10 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
             return ';'.join(list_url)
     return 'Empty field'
 
-def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish):
+
+def log_repository_issues(
+    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish
+):
     issues = client.get_issues(repository)
     for issue in issues:
         if (
@@ -172,7 +176,10 @@ def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_na
 
         sleep(TIMEDELTA)
 
-def log_issues(client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag):
+
+def log_issues(
+    client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag
+):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repo:
@@ -183,7 +190,9 @@ def log_issues(client: IRepositoryAPI, working_repo, csv_name, token, start, fin
                 forked_repos = client.get_forks(repo)
                 for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.name)
-                    log_repository_issues(client, forked_repo, csv_name, token, start, finish)
+                    log_repository_issues(
+                        client, forked_repo, csv_name, token, start, finish
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:
