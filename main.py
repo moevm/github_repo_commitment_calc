@@ -31,9 +31,11 @@ def parse_args():
         help="export table to google sheets",
         action="store_true",
     )
-    parser.add_argument(
-        '-t', '--token', type=str, required=True, help='token github account'
-    )
+
+    token = parser.add_mutually_exclusive_group(required=True)
+    token.add_argument('-t', '--token', type=str, help='token github account')
+    token.add_argument('--tokens', type=str, help='path to your tokens')
+
     parser.add_argument(
         '-l',
         '--list',
@@ -126,7 +128,12 @@ def parse_time(datetime_str):
 
 def main():
     args = parse_args()
-    token = args.token
+
+    if args.token:
+        tokens = [args.token]
+    else:
+        tokens = git_logger.get_tokens_from_file(args.tokens)
+
     repositories = args.list
     csv_name = args.out
     path_drepo = args.download_repos
@@ -134,41 +141,35 @@ def main():
     log_pr_comments = args.pr_comments
 
     try:
-        client = git_logger.login(token=token)
+        clients = git_logger.GithubClients(tokens)
     except Exception as e:
         print(e)
     else:
-        working_repos = git_logger.get_next_repo(client, repositories)
+        working_repos = git_logger.get_next_repo(clients, repositories)
         start = parse_time(args.start.split('-'))
         finish = parse_time(args.finish.split('-'))
 
         if args.commits:
             commits_parser.log_commits(
-                client, working_repos, csv_name, start, finish, args.branch, fork_flag
+                working_repos, csv_name, start, finish, args.branch, fork_flag
             )
         if args.pull_requests:
             pull_requests_parser.log_pull_requests(
-                client,
                 working_repos,
                 csv_name,
-                token,
                 start,
                 finish,
                 fork_flag,
                 log_pr_comments,
             )
         if args.issues:
-            issues_parser.log_issues(
-                client, working_repos, csv_name, token, start, finish, fork_flag
-            )
+            issues_parser.log_issues(working_repos, csv_name, start, finish, fork_flag)
         if args.invites:
-            invites_parser.log_invitations(client, working_repos, csv_name)
+            invites_parser.log_invitations(working_repos, csv_name)
         if args.wikis:
-            wikipars.wikiparser(client, repositories, path_drepo, csv_name)
+            wikipars.wikiparser(clients, repositories, path_drepo, csv_name)
         if args.contributors:
-            contributors_parser.log_contributors(
-                client, working_repos, csv_name, fork_flag
-            )
+            contributors_parser.log_contributors(working_repos, csv_name, fork_flag)
         if args.export_google_sheets:
             export_sheets.write_data_to_table(
                 csv_name, args.google_token, args.table_id, args.sheet_id

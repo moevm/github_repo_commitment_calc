@@ -10,17 +10,18 @@ logging.basicConfig(
 
 
 # Модельные классы
+@dataclass
+class Repository:
+    _id: str
+    name: str
+    url: str
+
 
 @dataclass
 class Contributor:
     username: str
     email: str
 
-@dataclass
-class User:
-    login: str
-    username: str
-    email: str
 
 @dataclass
 class Commit:
@@ -28,26 +29,13 @@ class Commit:
     message: str
     author: User
     date: datetime
-    files: list[str]
 
-@dataclass
-class Branch:
-    name: str
-    last_commit: Commit | None
-
-
-@dataclass
-class Repository:
-    _id: str
-    name: str
-    url: str
-    default_branch: Branch
-    owner: User
 
 @dataclass
 class Issue:
     _id: str
     title: str
+    author: Contributor
     state: str
     created_at: datetime
     closed_at: datetime
@@ -59,9 +47,9 @@ class Issue:
 
 @dataclass
 class PullRequest:
-    _id: int
+    _id: str
     title: str
-    author: User
+    author: Contributor
     state: str
     created_at: datetime
     head_label: str
@@ -82,20 +70,17 @@ class Invite:
     html_url: str
 
 @dataclass
-class Comment:
-    body: str
-    created_at: datetime
-    author: User
-
-@dataclass
 class WikiPage:
     title: str
     content: str
 
+@dataclass
+class Branch:
+    name: str
+    last_commit: Commit | None
 
 # Интерфейс API
 class IRepositoryAPI(ABC):
-
     @abstractmethod
     def get_repository(self, id: str) -> Repository | None:
         """Получить репозиторий по его идентификатору."""
@@ -131,10 +116,6 @@ class IRepositoryAPI(ABC):
         pass
 
     @abstractmethod
-    def get_forks(self, repo: Repository) -> list[Repository]:
-        pass
-
-    @abstractmethod
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
         """Получить список wiki-страниц для репозитория."""
         pass
@@ -147,12 +128,10 @@ class IRepositoryAPI(ABC):
     def get_invites(self, repo: Repository) -> list[Invite]:
         pass
 
-
 # Фабрика для создания API
 class RepositoryFactory:
     @staticmethod
-    def create_api(source, client) -> IRepositoryAPI:
-        from GitHubRepoAPI import GitHubRepoAPI
+    def create_api(source: str, client) -> IRepositoryAPI:
         if client is None:
             raise ValueError("Client cannot be None")
         if source == 'github':

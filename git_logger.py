@@ -1,38 +1,83 @@
+from github import Github, GithubException, PullRequest
 from time import sleep
-from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
+
 def login(token):
+    client = Github(login_or_token=token)
+
     try:
-        client = RepositoryFactory.create_api("github", token)
-    except Exception as err:
-        print(f'Github: Connect: error {err}')
+        client.get_user().login
+    except GithubException as err:
+        print(f'Github: Connect: error {err.data}')
         print('Github: Connect: user could not be authenticated please try again.')
         exit(1)
     else:
         return client
 
-def get_next_repo(client: IRepositoryAPI, repositories):
+
+def get_tokens_from_file(tokens_path: str) -> list[str]:
+    with open(tokens_path, 'r') as file:
+        tokens = [token for token in file.read().split('\n') if token]
+
+    return tokens
+
+
+class GithubClients:
+    def __init__(self, tokens: list[str]):
+        self.clients = self._init_clients(tokens)
+        self.cur_client = None
+
+    def _init_clients(self, tokens: list[str]) -> list[dict]:
+        clients = [{"client": login(token), "token": token} for token in tokens]
+        # нужно ли нам рейзить ошибку в случае 403, или просто временно пропускать эти токены?
+
+        return clients
+
+    def get_next_client(self) -> Github:
+        client = None
+        max_remaining_limit = -1
+
+        for client_tmp in self.clients:
+            remaining_limit, limit = client_tmp["client"].rate_limiting
+
+            # можно добавить вывод износа токена
+            # можно дополнительно проверять на 403 и временно пропускать эти токены,
+            # либо завести константу "минимальный коэффициент износа" и не трогать "изношенные" токены
+
+            if remaining_limit > max_remaining_limit:
+                client = client_tmp
+                max_remaining_limit = remaining_limit
+
+            sleep(TIMEDELTA)
+
+        if client is None:
+            raise Exception("No github-clients available")
+
+        self.cur_client = client
+        return client
+
+
+def get_next_repo(clients: GithubClients, repositories):
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
     for repo_name in list_repos:
         try:
-            repo = client.get_repository(repo_name)
-            if not repo:
-                raise Exception(f"Repository {repo_name} not found.")
-        except Exception as err:
-            print(f'Github: Connect: error {err}')
+            cur_client = clients.get_next_client()
+            repo = cur_client['client'].get_repo(repo_name)
+        except GithubException as err:
+            print(f'Github: Connect: error {err.data}')
             print(f'Github: Connect: failed to load repository "{repo_name}"')
             exit(1)
         else:
-            yield repo
+            print(cur_client['token'])
+            yield repo, cur_client['token']
+
 
 def get_assignee_story(github_object):
-    #TODO
-    return ""
     assignee_result = ""
     events = (
         github_object.get_issue_events()
