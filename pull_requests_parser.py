@@ -156,7 +156,7 @@ def log_repositories_pr(
         }
 
         if log_comments:
-            comments = client.get_comments(repo, pull)
+            comments = client.get_comments(repository, pull)
             if len(comments) > 0:
                 for comment in comments:
                     info = info_tmp

@@ -170,6 +170,7 @@ class RepositoryFactory:
     @staticmethod
     def create_api(source: str, client) -> IRepositoryAPI:
         from GitHubRepoAPI import GitHubRepoAPI
+        from ForgejoRepoAPI import ForgejoRepoAPI
 
         if client is None:
             raise ValueError("Client cannot be None")
