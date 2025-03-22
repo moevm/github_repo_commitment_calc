@@ -1,6 +1,5 @@
 from time import sleep
-from github import Github, GithubException, PullRequest
-import GitHubRepoAPI  # Импортируем обёртку
+from interface_wrapper import IRepositoryAPI, PullRequest, Repository
 
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
@@ -18,20 +17,17 @@ def login(token):
     else:
         return client
 
-def get_next_repo(client: Github, repositories):
+def get_next_repo(client: IRepositoryAPI, repositories):
     api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
-    for repo_name in list_repos:
+    for repo in list_repos:
         try:
-            # Получаем репозиторий через обёртку
-            repo = api.get_repository(repo_name)
-            if not repo:
-                raise GithubException(status=404, data={"message": f"Repository {repo_name} not found."})
-        except GithubException as err:
+            pass
+        except Exception as err:
             print(f'Github: Connect: error {err.data}')
-            print(f'Github: Connect: failed to load repository "{repo_name}"')
+            print(f'Github: Connect: failed to load repository "{repo.name}"')
             exit(1)
         else:
             yield repo

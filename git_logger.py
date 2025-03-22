@@ -1,45 +1,40 @@
 from time import sleep
-from github import Github, GithubException, PullRequest
-import GitHubRepoAPI  # Импортируем обёртку
+from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
 def login(token):
-    client = Github(login_or_token=token)
-
     try:
-        # Проверяем аутентификацию через оригинальный метод(Нужно добавить)
-        user_login = client.get_user().login
-    except GithubException as err:
-        print(f'Github: Connect: error {err.data}')
+        client = RepositoryFactory.create_api("github", token)
+    except Exception as err:
+        print(f'Github: Connect: error {err}')
         print('Github: Connect: user could not be authenticated please try again.')
         exit(1)
     else:
         return client
 
-def get_next_repo(client: Github, repositories):
-    api = GitHubRepoAPI.GitHubRepoAPI(client)  # Используем обёртку
+def get_next_repo(client: IRepositoryAPI, repositories):
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
     for repo_name in list_repos:
         try:
-            # Получаем репозиторий через обёртку
-            repo = api.get_repository(repo_name)
+            repo = client.get_repository(repo_name)
             if not repo:
-                raise GithubException(status=404, data={"message": f"Repository {repo_name} not found."})
-        except GithubException as err:
-            print(f'Github: Connect: error {err.data}')
+                raise Exception(f"Repository {repo_name} not found.")
+        except Exception as err:
+            print(f'Github: Connect: error {err}')
             print(f'Github: Connect: failed to load repository "{repo_name}"')
             exit(1)
         else:
             yield repo
 
 def get_assignee_story(github_object):
+    #TODO
+    return ""
     assignee_result = ""
     events = (
-        #Нужно добавить
         github_object.get_issue_events()
         if type(github_object) is PullRequest.PullRequest
         else github_object.get_events()
