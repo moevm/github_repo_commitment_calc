@@ -18,6 +18,7 @@ FIELDNAMES = (
     'commit id',
     'branch',
 )
+GOOGLE_MAX_CELL_LEN = 50000
 
 
 def log_repository_commits(
@@ -42,12 +43,14 @@ def log_repository_commits(
                 or commit.date.astimezone(pytz.timezone(TIMEZONE)) > finish
             ):
                 continue
+
+            changed_files = '; '.join([file for file in commit.files])
             commit_data = [
                 repository.name,
                 commit.author.username,
                 commit.author.email or EMPTY_FIELD,
                 commit.date,
-                '; '.join([file for file in commit.files]),
+                changed_files[:GOOGLE_MAX_CELL_LEN],
                 commit._id,
                 branch,
             ]
