@@ -9,20 +9,38 @@ on:
 jobs:
 
   smoke-test:
+    strategy:
+      matrix:
+        args:
+          - "--invites"
+          - "--commits"
+          - "--pull_requests"
+          - "--issues"
+          - "--wikis"
+          - "--contributors"
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Create list.txt
-      run: echo "OSLL/github_repo_commitment_calc" > list.txt
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install dependencies
       run: pip install -r requirements.txt
 
+    - name: Create list.txt
+      run: echo "moevm/github_repo_commitment_calc" > list.txt
+
     - name: Run test
-      run: python3 main.py --commits --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out.csv --branch master
+      run: |
+        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out.csv --branch master
 
     - name: Check if out.csv exists
       run: ls out.csv
@@ -31,8 +49,5 @@ jobs:
       if: failure()
       run: exit 1
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: out.csv
+    - name: Show out.csv
+      run: cat out.csv
