@@ -1,7 +1,7 @@
 from utils import logger
 from time import sleep
 from typing import Generator
-from interface_wrapper import IRepositoryAPI, Repository
+from interface_wrapper import IRepositoryAPI, Repository, User
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
@@ -28,10 +28,10 @@ def log_repository_contributors(client: IRepositoryAPI, repository: Repository, 
 
     for contributor_stat in contributors_stats.values():
         contributor = contributor_stat["contributor_object"]
-        contributor_permissons = repository.get_collaborator_permission(contributor)
+        contributor_permissions = client.get_collaborator_permission(repository, User(login=contributor,username="",email=""))
 
         info_tmp = {
-            'repository name': repository.full_name,
+            'repository name': repository.name,
             'login': contributor.login,
             'name': nvl(contributor.name),
             'email': nvl(contributor_stat['email']),
@@ -52,8 +52,6 @@ def log_repository_contributors(client: IRepositoryAPI, repository: Repository, 
 
 def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> dict:
     contributors_stats = dict()
-
-    # Используем обёртку для получения коммитов
     commits = client.get_commits(repository)
 
     for commit in commits:
@@ -62,7 +60,7 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
         if not contributor.login in contributors_stats:
             contributors_stats[contributor.login] = {
                 'total_commits': 0,
-                'email': commit.commit.author.email,
+                'email': commit.author.email,
                 'contributor_object': contributor,
             }
 
@@ -79,8 +77,8 @@ def log_contributors(
 
     for repo in working_repos:
         try:
-            logger.log_title(repo.full_name)
-            log_repository_contributors(repo, csv_name)
+            logger.log_title(repo.name)
+            log_repository_contributors(client, repo, csv_name)
 
             if fork_flag:
                 for forked_repo in client.get_forks():
@@ -88,6 +86,6 @@ def log_contributors(
                     log_repository_contributors(client, forked_repo, csv_name)
                     sleep(TIMEDELTA)
 
-        except e:
+        except Exception as e:
             print(e)
             exit(1)

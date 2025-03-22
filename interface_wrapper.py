@@ -26,7 +26,7 @@ class User:
 class Commit:
     _id: str
     message: str
-    author: Contributor
+    author: User
     date: datetime
     files: list[str]
 
@@ -56,7 +56,6 @@ class Issue:
     closed_by: User
     labels: list[str]
     milestone: str
-    files: list[str]
 
 @dataclass
 class PullRequest:
@@ -75,6 +74,12 @@ class PullRequest:
     labels: list[str]
     milestone: str
 
+@dataclass
+class Invite:
+    _id: int
+    invitee: User
+    created_at: datetime
+    html_url: str
 
 @dataclass
 class Comment:
@@ -94,6 +99,10 @@ class IRepositoryAPI(ABC):
     @abstractmethod
     def get_repository(self, id: str) -> Repository | None:
         """Получить репозиторий по его идентификатору."""
+        pass
+
+    @abstractmethod
+    def get_collaborator_permission(self, repo: Repository, user: User) -> str:
         pass
 
     @abstractmethod
@@ -132,6 +141,10 @@ class IRepositoryAPI(ABC):
 
     @abstractmethod
     def get_comments(self, obj) -> list[Comment]:
+        pass
+
+    @abstractmethod
+    def get_invites(self, repo: Repository) -> list[Invite]:
         pass
 
 

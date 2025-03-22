@@ -9,7 +9,8 @@ from interface_wrapper import (
     Branch,
     IRepositoryAPI,
     User,
-    Comment
+    Comment,
+    Invite
 )
 from github import Github
 
@@ -27,6 +28,9 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
             return None
 
+    def get_collaborator_permission(self, repo: Repository, user: User) -> str:
+        return self.client.get_repo(repo._id).get_collaborator_permission(user.login)
+
     def get_commits(self, repo: Repository) -> list[Commit]:
         try:
             commits = self.client.get_repo(repo._id).get_commits()
@@ -34,8 +38,8 @@ class GitHubRepoAPI(IRepositoryAPI):
                 Commit(
                     _id=c.sha,
                     message=c.commit.message,
-                    author=Contributor(
-                        c.author.login if c.author else "unknown", c.commit.author.email
+                    author=User(
+                        login=c.author.login,username=c.author.name,email=c.author.email
                     ),
                     date=c.commit.author.date,
                     files=[
@@ -186,6 +190,24 @@ class GitHubRepoAPI(IRepositoryAPI):
                 result.append(Comment(body=c.body,created_at=c.created_at,author=User(login=c.user.login,username=c.user.name,email=c.user.email)))
 
         return result
+
+    def get_invites(self, repo: Repository) -> list[Invite]:
+        try:
+            invites = self.client.get_repo(repo._id).get_pending_invitations()
+            return [
+                Invite(
+                    _id=i._id,
+                    invitee=User(login=i.invitee.login, username=i.invitee.name, email=i.invitee.email),
+                    created_at=i.created_at,
+                    html_url=i.html_url
+                )
+                for i in invites
+            ]
+        except Exception as e:
+            logging.error(
+                f"Failed to get invites from GitHub for repo {repo.name}: {e}"
+            )
+            return []
 
 
 # Точка входа для тестирования
