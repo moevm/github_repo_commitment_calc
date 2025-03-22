@@ -34,7 +34,7 @@ class GithubClients:
 
         return clients
 
-    def get_next_client(self) -> Github:
+    def get_next_client(self):
         client = None
         max_remaining_limit = -1
 
