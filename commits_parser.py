@@ -59,12 +59,10 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
                 sleep(TIMEDELTA)
 
 
-def log_commits(
-    client: Github, working_repos, csv_name, start, finish, branch, fork_flag
-):
+def log_commits(working_repos, csv_name, start, finish, branch, fork_flag):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    for repo, token in working_repos:
         try:
             logger.log_title(repo.full_name)
             log_repository_commits(repo, csv_name, start, finish, branch)

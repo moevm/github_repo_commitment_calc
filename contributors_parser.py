@@ -72,12 +72,10 @@ def get_contributors_stats(repository: Repository) -> dict:
     return contributors_stats
 
 
-def log_contributors(
-    client: Github, working_repos: Generator, csv_name: str, fork_flag: bool
-):
+def log_contributors(working_repos: Generator, csv_name: str, fork_flag: bool):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    for repo, token in working_repos:
         try:
             logger.log_title(repo.full_name)
             log_repository_contributors(repo, csv_name)

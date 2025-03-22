@@ -36,10 +36,10 @@ def log_repository_invitations(repository: Repository, csv_name):
         sleep(TIMEDELTA)
 
 
-def log_invitations(client: Github, working_repos, csv_name):
+def log_invitations(working_repos, csv_name):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    for repo, token in working_repos:
         logger.log_title(repo.full_name)
         try:
             log_repository_invitations(repo, csv_name)
