@@ -21,23 +21,9 @@ FIELDNAMES = (
 GOOGLE_MAX_CELL_LEN = 50000
 
 
-
 def log_repository_commits(
     client: IRepositoryAPI, repository: Repository, csv_name, start, finish, branch
 ):
-
-
-def log_commit_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
-
-
-def log_commit_to_stdout(info):
-    print(info)
-
-
-def log_repository_commits(repository: Repository, csv_name, start, finish, branch):
     branches = []
     match branch:
         case 'all':
@@ -57,11 +43,18 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
                 or commit.date.astimezone(pytz.timezone(TIMEZONE)) > finish
             ):
                 continue
-            if commit.commit is not None:
-                nvl = lambda val: val or EMPTY_FIELD
-                commit_data = [repository.full_name, commit.commit.author.name, nvl(commit.author.login), nvl(commit.commit.author.email),
-                               commit.commit.author.date, '; '.join([file.filename for file in commit.files]), commit.commit.sha, branch]
-                info = dict(zip(FIELDNAMES, commit_data))
+
+            changed_files = '; '.join([file for file in commit.files])
+            commit_data = [
+                repository.name,
+                commit.author.username,
+                commit.author.email or EMPTY_FIELD,
+                commit.date,
+                changed_files[:GOOGLE_MAX_CELL_LEN],
+                commit._id,
+                branch,
+            ]
+            info = dict(zip(FIELDNAMES, commit_data))
 
             logger.log_to_csv(csv_name, FIELDNAMES, info)
             logger.log_to_stdout(info)
