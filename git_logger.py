@@ -6,13 +6,13 @@ TIMEZONE = 'Europe/Moscow'
 
 
 def login(token):
-    if 1:
+    try:
         client = RepositoryFactory.create_api("github", token)
-    # except Exception as err:
-    #     print(f'Github: Connect: error {err}')
-    #     print('Github: Connect: user could not be authenticated please try again.')
-    #     exit(1)
-    # else:
+    except Exception as err:
+        print(f'Github: Connect: error {err}')
+        print('Github: Connect: user could not be authenticated please try again.')
+        exit(1)
+    else:
         return client
 
 
@@ -50,16 +50,16 @@ def get_next_repo(clients: IClients, repositories):
         list_repos = [x for x in file.read().split('\n') if x]
     print(list_repos)
     for repo_name in list_repos:
-        if 1:
+        try:
             cur_client = clients.get_next_client()
             repo = cur_client['client'].get_repository(repo_name)
             if not repo:
                 raise Exception(f"Repository {repo_name} not found.")
-        # except Exception as err:
-        #     print(f'Github: Connect: error {err}')
-        #     print(f'Github: Connect: failed to load repository "{repo_name}"')
-        #     exit(1)
-        # else:
+        except Exception as err:
+            print(f'Github: Connect: error {err}')
+            print(f'Github: Connect: failed to load repository "{repo_name}"')
+            exit(1)
+        else:
             yield repo
 
 
