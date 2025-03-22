@@ -18,7 +18,6 @@ jobs:
           - "--issues"
           - "--wikis"
           - "--contributors"
-          - "--pr_comments"
 
     runs-on: ubuntu-latest
 
