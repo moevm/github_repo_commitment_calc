@@ -20,13 +20,33 @@ class GitHubRepoAPI(IRepositoryAPI):
         self.client = client
 
     def get_user_data(self, user) -> User:
-        return User(login=user.login, username=user.name, email=user.email, html_url=user.html_url, node_id=user.node_id, type=user.type, bio=user.bio, site_admin=user.site_admin, _id=user.id)
-
+        return User(
+            login=user.login,
+            username=user.name,
+            email=user.email,
+            html_url=user.html_url,
+            node_id=user.node_id,
+            type=user.type,
+            bio=user.bio,
+            site_admin=user.site_admin,
+            _id=user.id,
+        )
 
     def get_repository(self, id: str) -> Repository | None:
         try:
             repo = self.client.get_repo(id)
-            return Repository(_id=repo.full_name, name=repo.name, url=repo.html_url, default_branch=Branch(name=repo.default_branch, last_commit=None), owner=User(login=repo.owner.login,username=repo.owner.name,email=repo.owner.email,html_url=repo.owner.html_url))
+            return Repository(
+                _id=repo.full_name,
+                name=repo.name,
+                url=repo.html_url,
+                default_branch=Branch(name=repo.default_branch, last_commit=None),
+                owner=User(
+                    login=repo.owner.login,
+                    username=repo.owner.name,
+                    email=repo.owner.email,
+                    html_url=repo.owner.html_url,
+                ),
+            )
         except Exception as e:
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
             return None
@@ -43,10 +63,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                     message=c.commit.message,
                     author=self.get_user_data(c.author),
                     date=c.commit.author.date,
-                    files=[
-                        f.filename
-                            for f in c.files
-                    ] if files else None
+                    files=[f.filename for f in c.files] if files else None,
                 )
                 for c in commits
             ]
@@ -79,11 +96,8 @@ class GitHubRepoAPI(IRepositoryAPI):
                     closed_by=self.get_user_data(i.closed_by) if i.closed_by else None,
                     body=i.body,
                     user=self.get_user_data(i.user),
-                    labels= [
-                        l.name
-                        for l in i.labels
-                    ],
-                    milestone=i.milestone.title if i.milestone else None
+                    labels=[label.name for label in i.labels],
+                    milestone=i.milestone.title if i.milestone else None,
                 )
                 for i in issues
             ]
@@ -106,16 +120,10 @@ class GitHubRepoAPI(IRepositoryAPI):
                     head_ref=p.head.ref,
                     base_ref=p.base.ref,
                     merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
-                    files=[
-                        f.filename
-                            for f in p.get_files()
-                    ],
+                    files=[file.filename for file in p.get_files()],
                     issue_url=p.issue_url,
-                    labels= [
-                        l.name
-                        for l in p.labels
-                    ],
-                    milestone=p.milestone.title if p.milestone else None
+                    labels=[label.name for label in p.labels],
+                    milestone=p.milestone.title if p.milestone else None,
                 )
                 for p in pulls
             ]
@@ -164,12 +172,14 @@ class GitHubRepoAPI(IRepositoryAPI):
         repo_client = self.client.get_repo(repo._id)
         result = []
         for r in repo_client.get_forks():
-            result.append(Repository(_id=repo.full_name, name=repo.name, url=repo.html_url))
+            result.append(
+                Repository(_id=repo.full_name, name=repo.name, url=repo.html_url)
+            )
         return result
 
     def get_comments(self, repo, obj) -> list[Comment]:
         result = []
-        if type(obj) == Issue:
+        if isinstance(obj, Issue):
             # TODO оптимизировать
             issues = self.client.get_repo(repo._id).get_issues(state='all')
             issue = None
@@ -178,8 +188,14 @@ class GitHubRepoAPI(IRepositoryAPI):
                     issue = i
                     break
             for c in issue.get_comments():
-                result.append(Comment(body=c.body,created_at=c.created_at,author=self.get_user_data(c.user)))
-        elif type(obj) == PullRequest:
+                result.append(
+                    Comment(
+                        body=c.body,
+                        created_at=c.created_at,
+                        author=self.get_user_data(c.user),
+                    )
+                )
+        elif isinstance(obj, PullRequest):
             # TODO оптимизировать
             pulls = self.client.get_repo(repo._id).get_pulls(state='all')
             pull = None
@@ -188,7 +204,13 @@ class GitHubRepoAPI(IRepositoryAPI):
                     pull = p
                     break
             for c in pull.get_comments():
-                result.append(Comment(body=c.body,created_at=c.created_at,author=self.get_user_data(c.user.login)))
+                result.append(
+                    Comment(
+                        body=c.body,
+                        created_at=c.created_at,
+                        author=self.get_user_data(c.user.login),
+                    )
+                )
 
         return result
 
@@ -200,7 +222,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                     _id=i._id,
                     invitee=self.get_user_data(i.invitee),
                     created_at=i.created_at,
-                    html_url=i.html_url
+                    html_url=i.html_url,
                 )
                 for i in invites
             ]
@@ -210,11 +232,12 @@ class GitHubRepoAPI(IRepositoryAPI):
             )
             return []
 
+
 # Точка входа для тестирования
 if __name__ == "__main__":
     # Создайте клиент GitHub (используйте ваш токен)
-    client = Github("tocken")
-    api = GitHubRepoAPI(client)
+    # client = Github("tocken")
+    api = GitHubRepoAPI('client')
 
     # Укажите ваш репозиторий
     repo_name = ""

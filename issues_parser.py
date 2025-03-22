@@ -34,6 +34,7 @@ FIELDNAMES = (
     'milestone',
 )
 
+
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
     # TODO как-то заменить
     return
@@ -95,12 +96,12 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
         issues_data = pull_request_data["timelineItems"]["nodes"]
         for pulls in issues_data:
             if (
-                pulls.get("CrossReferencedEvent") != None
+                pulls.get("CrossReferencedEvent") is not None
                 and pulls.get("CrossReferencedEvent").get("url") not in list_url
             ):
                 list_url.append(pulls.get("CrossReferencedEvent").get("url"))
             if (
-                pulls.get("ConnectedEvent") != None
+                pulls.get("ConnectedEvent") is not None
                 and pulls.get("ConnectedEvent").get("url") not in list_url
             ):
                 list_url.append(pulls.get("ConnectedEvent").get("url"))
@@ -110,7 +111,16 @@ def get_connected_pulls(issue_number, repo_owner, repo_name, token):
             return ';'.join(list_url)
     return 'Empty field'
 
-def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish):
+
+def log_repository_issues(
+    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish
+):
+    def nvl(val):
+        return val or EMPTY_FIELD
+
+    def get_info(obj, attr):
+        return EMPTY_FIELD if obj is None else getattr(obj, attr)
+
     issues = client.get_issues(repository)
     for issue in issues:
         if (
@@ -118,8 +128,7 @@ def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_na
             or issue.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
         ):
             continue
-        nvl = lambda val: val or EMPTY_FIELD
-        get_info = lambda obj, attr: EMPTY_FIELD if obj is None else getattr(obj, attr)
+
         info_tmp = {
             'repository name': repository.name,
             'number': issue._id,
@@ -172,7 +181,10 @@ def log_repository_issues(client: IRepositoryAPI, repository: Repository, csv_na
 
         sleep(TIMEDELTA)
 
-def log_issues(client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag):
+
+def log_issues(
+    client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag
+):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repo:
@@ -183,7 +195,9 @@ def log_issues(client: IRepositoryAPI, working_repo, csv_name, token, start, fin
                 forked_repos = client.get_forks(repo)
                 for forked_repo in forked_repos:
                     logger.log_title("FORKED:", forked_repo.name)
-                    log_repository_issues(client, forked_repo, csv_name, token, start, finish)
+                    log_repository_issues(
+                        client, forked_repo, csv_name, token, start, finish
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:

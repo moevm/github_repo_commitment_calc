@@ -1,7 +1,8 @@
 from utils import logger
 import pytz
 from time import sleep
-#from github import Github, Repository, GithubException, PullRequest
+
+# from github import Github, Repository, GithubException, PullRequest
 from interface_wrapper import IRepositoryAPI, Repository
 
 EMPTY_FIELD = 'Empty field'
@@ -19,7 +20,9 @@ FIELDNAMES = (
 )
 
 
-def log_repository_commits(client: IRepositoryAPI, repository: Repository, csv_name, start, finish, branch):
+def log_repository_commits(
+    client: IRepositoryAPI, repository: Repository, csv_name, start, finish, branch
+):
     branches = []
     match branch:
         case 'all':
@@ -56,7 +59,9 @@ def log_repository_commits(client: IRepositoryAPI, repository: Repository, csv_n
             sleep(TIMEDELTA)
 
 
-def log_commits(client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag):
+def log_commits(
+    client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
+):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
     for repo, token in working_repos:
@@ -66,7 +71,9 @@ def log_commits(client: IRepositoryAPI, working_repos, csv_name, start, finish, 
             if fork_flag:
                 for forked_repo in client.get_forks(repo):
                     logger.log_title("FORKED:", forked_repo.full_name)
-                    log_repository_commits(client, forked_repo, csv_name, start, finish, branch)
+                    log_repository_commits(
+                        client, forked_repo, csv_name, start, finish, branch
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:

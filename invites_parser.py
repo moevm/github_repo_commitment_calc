@@ -22,7 +22,9 @@ def log_inviter(repo, invite, writer):
     print(invite_info)
 
 
-def log_repository_invitations(client: IRepositoryAPI, repository: Repository, csv_name):
+def log_repository_invitations(
+    client: IRepositoryAPI, repository: Repository, csv_name
+):
     invitations = client.get_invites(repository)
     for invite in invitations:
         invite_info = {
