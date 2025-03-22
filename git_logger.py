@@ -57,7 +57,7 @@ class GithubClients:
             raise Exception("No github-clients available")
 
         self.cur_client = client
-        return client["client"]
+        return client
 
 
 def get_next_repo(clients: GithubClients, repositories):
@@ -67,13 +67,14 @@ def get_next_repo(clients: GithubClients, repositories):
     for repo_name in list_repos:
         try:
             cur_client = clients.get_next_client()
-            repo = cur_client.get_repo(repo_name)
+            repo = cur_client['client'].get_repo(repo_name)
         except GithubException as err:
             print(f'Github: Connect: error {err.data}')
             print(f'Github: Connect: failed to load repository "{repo_name}"')
             exit(1)
         else:
-            yield repo
+            print(cur_client['token'])
+            yield repo, cur_client['token']
 
 
 def get_assignee_story(github_object):

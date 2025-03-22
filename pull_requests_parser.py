@@ -161,7 +161,6 @@ def log_repositories_pr(
 
 
 def log_pull_requests(
-    clients: GithubClients,
     working_repos,
     csv_name,
     start,
@@ -171,19 +170,17 @@ def log_pull_requests(
 ):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    for repo, token in working_repos:
         try:
             logger.log_title(repo.full_name)
-            log_repositories_pr(
-                repo, csv_name, clients.cur_client["token"], start, finish
-            )
+            log_repositories_pr(repo, csv_name, token, start, finish)
             if fork_flag:
                 for forked_repo in repo.get_forks():
                     logger.log_title("FORKED:", forked_repo.full_name)
                     log_repositories_pr(
                         forked_repo,
                         csv_name,
-                        clients.cur_client["token"],
+                        token,
                         start,
                         finish,
                         log_comments,
