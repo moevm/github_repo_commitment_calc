@@ -11,17 +11,21 @@ logging.basicConfig(
 
 # Модельные классы
 @dataclass
-class Repository:
-    _id: str
-    name: str
-    url: str
-
-
-@dataclass
 class Contributor:
     username: str
     email: str
 
+@dataclass
+class User:
+    _id: int
+    login: str
+    username: str
+    email: str
+    html_url: str
+    node_id: str
+    type: str
+    bio: str
+    site_admin: bool
 
 @dataclass
 class Commit:
@@ -29,13 +33,26 @@ class Commit:
     message: str
     author: User
     date: datetime
+    files: list[str]
 
+@dataclass
+class Branch:
+    name: str
+    last_commit: Commit | None
+
+
+@dataclass
+class Repository:
+    _id: str
+    name: str
+    url: str
+    default_branch: Branch
+    owner: User
 
 @dataclass
 class Issue:
     _id: str
     title: str
-    author: Contributor
     state: str
     created_at: datetime
     closed_at: datetime
@@ -47,9 +64,9 @@ class Issue:
 
 @dataclass
 class PullRequest:
-    _id: str
+    _id: int
     title: str
-    author: Contributor
+    author: User
     state: str
     created_at: datetime
     head_label: str
@@ -70,17 +87,23 @@ class Invite:
     html_url: str
 
 @dataclass
+class Comment:
+    body: str
+    created_at: datetime
+    author: User
+
+@dataclass
 class WikiPage:
     title: str
     content: str
 
-@dataclass
-class Branch:
-    name: str
-    last_commit: Commit | None
-
 # Интерфейс API
 class IRepositoryAPI(ABC):
+
+    @abstractmethod
+    def get_user_data(self, user) -> User:
+         pass
+
     @abstractmethod
     def get_repository(self, id: str) -> Repository | None:
         """Получить репозиторий по его идентификатору."""
@@ -91,7 +114,7 @@ class IRepositoryAPI(ABC):
         pass
 
     @abstractmethod
-    def get_commits(self, repo: Repository) -> list[Commit]:
+    def get_commits(self, repo: Repository, files: bool = True) -> list[Commit]:
         """Получить список коммитов для репозитория."""
         pass
 
@@ -116,6 +139,10 @@ class IRepositoryAPI(ABC):
         pass
 
     @abstractmethod
+    def get_forks(self, repo: Repository) -> list[Repository]:
+        pass
+
+    @abstractmethod
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
         """Получить список wiki-страниц для репозитория."""
         pass
@@ -132,6 +159,7 @@ class IRepositoryAPI(ABC):
 class RepositoryFactory:
     @staticmethod
     def create_api(source: str, client) -> IRepositoryAPI:
+        from GitHubRepoAPI import GitHubRepoAPI
         if client is None:
             raise ValueError("Client cannot be None")
         if source == 'github':

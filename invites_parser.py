@@ -39,7 +39,7 @@ def log_repository_invitations(client: IRepositoryAPI, repository: Repository, c
 def log_invitations(client: IRepositoryAPI, working_repos, csv_name):
     logger.log_to_csv(csv_name, FIELDNAMES)
 
-    for repo in working_repos:
+    for repo, token in working_repos:
         logger.log_title(repo.name)
         try:
             log_repository_invitations(client, repo, csv_name)
