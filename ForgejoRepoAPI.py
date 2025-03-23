@@ -190,7 +190,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
             for fork in forks:
                 default_branch = Branch(name=fork.default_branch,last_commit=None)
-                owner = fork.owner  
+                owner = fork.owner
 
                 result.append(
                     Repository(
@@ -208,8 +208,36 @@ class ForgejoRepoAPI(IRepositoryAPI):
             logging.error(f"Failed to get forks from Forgejo for repo {repo.name}: {e}")
             return []
 
-    def get_comments(self, obj) -> list[Comment]:
-        return []
+    def get_comments(self, repo, obj) -> list[Comment]:
+        result = []
+        try:
+            if isinstance(obj, Issue):
+                comments = self.client.issue.get_repo_comments(repo.owner.login, repo.name)
+                result = [
+                    Comment(
+                        body=c.body,
+                        created_at=c.created_at,
+                        author=self.get_user_data(c.user),
+                    )
+                    for c in comments
+                ]
+
+            elif isinstance(obj, PullRequest):
+                comments = self.client.repository.repo_get_pull_review_comments(repo.owner.login, repo.name, obj._id,
+                                                                                100000)  # нет id комментария
+                result = [
+                    Comment(
+                        body=c.body,
+                        created_at=c.created_at,
+                        author=self.get_user_data(c.user),
+                    )
+                    for c in comments
+                ]
+
+        except Exception as e:
+            logging.error(f"Failed to get comments for repo {repo.name}: {e}")
+
+        return result
 
     def get_invites(self, repo: Repository) -> list[Invite]:
         return []
