@@ -83,7 +83,26 @@ class ForgejoRepoAPI(IRepositoryAPI):
             return []
 
     def get_issues(self, repo: Repository) -> list[Issue]:
-       return []
+        try:
+            issues = self.client.issue.list_issues(repo.owner.login, repo.name)
+            return [
+                Issue(
+                    _id=i.id,
+                    title=i.title,
+                    state=i.state,
+                    created_at=i.created_at,
+                    closed_at=i.closed_at if i.state == 'closed' else None,
+                    closed_by=self.get_user_data(i.closed_by) if hasattr(i, 'closed_by') and i.closed_by else None,
+                    body=i.body,
+                    user=self.get_user_data(i.user),
+                    labels=[label.name for label in i.labels],
+                    milestone=i.milestone.title if i.milestone else None,
+                )
+                for i in issues
+            ]
+        except Exception as e:
+            logging.error(f"Failed to get issues from Forgejo for repo {repo.name}: {e}")
+            return []
 
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
