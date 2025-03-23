@@ -1,7 +1,5 @@
-from pyforgejo import PyforgejoApi
 from interface_wrapper import (
     logging,
-    datetime,
     IRepositoryAPI,
     Repository,
     Commit,
@@ -14,6 +12,7 @@ from interface_wrapper import (
     Comment,
     Invite
 )
+import base64
 
 class ForgejoRepoAPI(IRepositoryAPI):
     def __init__(self, client):
@@ -132,13 +131,82 @@ class ForgejoRepoAPI(IRepositoryAPI):
             return []
 
     def get_branches(self, repo: Repository) -> list[Branch]:
-        return []
+        try:
+            branches = self.client.repository.repo_list_branches(repo.owner.login, repo.name)
+            result = []
+
+            for branch in branches:
+                commit = branch.commit
+
+                author = commit.author
+                contributor = Contributor(
+                    username=author.username if author else "unknown",
+                    email=author.email if author and author.email else "",
+                )
+
+                commit_details = self.client.repository.repo_get_single_commit(repo.owner.login, repo.name, commit.id)
+                files = [file.filename for file in getattr(commit_details, "files", [])]
+
+                commit_obj = Commit(
+                    _id=commit.id,
+                    message=commit.message,
+                    author=contributor,
+                    date=commit.timestamp,
+                    files=files,
+                )
+
+                result.append(Branch(name=branch.name, last_commit=commit_obj))
+
+            return result
+
+        except Exception as e:
+            logging.error(f"Failed to get branches from Forgejo for repo {repo.name}: {e}")
+            return []
 
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
-        return []
+        try:
+            pages = self.client.repository.repo_get_wiki_pages(repo.owner.login, repo.name)
+            result = []
+
+            for page in pages:
+                page_details = self.client.repository.repo_get_wiki_page(repo.owner.login, repo.name, page.title)
+
+                wiki_page = WikiPage(
+                    title=page_details.title,
+                    content=base64.b64decode(page_details.content_base_64).decode('utf-8')
+                )
+                result.append(wiki_page)
+
+            return result
+
+        except Exception as e:
+            logging.error(f"Failed to get wiki pages from Forgejo for repo {repo.name}: {e}")
+            return []
 
     def get_forks(self, repo: Repository) -> list[Repository]:
-        return []
+        try:
+            forks = self.client.repository.list_forks(repo.owner.login, repo.name)
+            result = []
+
+            for fork in forks:
+                default_branch = Branch(name=fork.default_branch,last_commit=None)
+                owner = fork.owner  
+
+                result.append(
+                    Repository(
+                        _id=fork.full_name,
+                        name=fork.name,
+                        url=fork.html_url,
+                        default_branch=default_branch,
+                        owner=owner
+
+                    )
+                )
+            return result
+
+        except Exception as e:
+            logging.error(f"Failed to get forks from Forgejo for repo {repo.name}: {e}")
+            return []
 
     def get_comments(self, obj) -> list[Comment]:
         return []
