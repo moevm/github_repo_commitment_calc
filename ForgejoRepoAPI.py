@@ -6,4 +6,4 @@ from interface_wrapper import (
 class ForgejoRepoAPI(IRepositoryAPI):
     ...
 
-def
+print(qwe)
