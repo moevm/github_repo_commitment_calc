@@ -40,12 +40,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                 name=repo.name,
                 url=repo.html_url,
                 default_branch=Branch(name=repo.default_branch, last_commit=None),
-                owner=User(
-                    login=repo.owner.login,
-                    username=repo.owner.name,
-                    email=repo.owner.email,
-                    html_url=repo.owner.html_url,
-                ),
+                owner=self.get_user_data(repo.owner),
             )
         except Exception as e:
             logging.error(f"Failed to get repository {id} from GitHub: {e}")
@@ -231,6 +226,9 @@ class GitHubRepoAPI(IRepositoryAPI):
                 f"Failed to get invites from GitHub for repo {repo.name}: {e}"
             )
             return []
+
+    def get_rate_limiting(self) -> tuple[int, int]:
+        return self.client.rate_limiting
 
 
 # Точка входа для тестирования

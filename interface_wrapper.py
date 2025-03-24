@@ -3,6 +3,9 @@ from datetime import datetime
 from dataclasses import dataclass
 import logging
 
+from github import Github
+from pyforgejo import PyforgejoApi
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -164,20 +167,24 @@ class IRepositoryAPI(ABC):
     def get_invites(self, repo: Repository) -> list[Invite]:
         pass
 
+    @abstractmethod
+    def get_rate_limiting(self) -> tuple[int, int]:
+        pass
+
 
 # Фабрика для создания API
 class RepositoryFactory:
     @staticmethod
-    def create_api(source: str, client) -> IRepositoryAPI:
+    def create_api(source: str, token: str, base_url: str | None = None) -> IRepositoryAPI:
         from GitHubRepoAPI import GitHubRepoAPI
         from ForgejoRepoAPI import ForgejoRepoAPI
 
-        if client is None:
-            raise ValueError("Client cannot be None")
         if source == 'github':
-            return GitHubRepoAPI(client)
+            return GitHubRepoAPI(Github(token))
         elif source == 'forgejo':
-            return ForgejoRepoAPI(client)
+            if not isinstance(base_url, str):
+                raise ValueError(f"base_url for PyforgejoApi should be str, got {type(base_url)}")
+            return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
         else:
             raise ValueError(f"Unsupported source: {source}")
 

@@ -13,7 +13,9 @@ from interface_wrapper import (
     Invite
 )
 import base64
+import sys
 from pyforgejo import PyforgejoApi
+import isodate
 
 
 class ForgejoRepoAPI(IRepositoryAPI):
@@ -62,7 +64,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
             return permission.permission
 
         except Exception as e:
-            if "403" in str(e):
+            if ("401" in str(e)) or ("403" in str(e)):
                 logging.error(
                     f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}.")
                 return f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}."
@@ -77,7 +79,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
                     _id=c.sha,
                     message=c.commit.message,
                     author=self.get_user_data(c.author),
-                    date=c.commit.author.date,
+                    date=isodate.parse_datetime(c.commit.author.date),
                     files=[f.filename for f in getattr(c, "files", [])] if files else None
                 )
                 for c in commits
@@ -122,7 +124,6 @@ class ForgejoRepoAPI(IRepositoryAPI):
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
             pulls = self.client.repository.repo_list_pull_requests(repo.owner.login, repo.name)
-
             return [
                 PullRequest(
                     _id=p.number,
@@ -135,8 +136,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
                     head_ref=p.head.ref,
                     base_ref=p.base.ref,
                     merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
-                    files=[file.filename for file in p.files],
-                    issue_url=p.issue_url,
+                    files=[], #TODO если возможно
+                    issue_url=None, #TODO если возможно
                     labels=[label.name for label in p.labels] if p.labels else [],
                     milestone=p.milestone.title if p.milestone else None,
                 )
@@ -257,6 +258,9 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
     def get_invites(self, repo: Repository) -> list[Invite]:
         return []
+
+    def get_rate_limiting(self) -> tuple[int, int]:
+        return sys.maxsize, sys.maxsize
 
 
 # Точка входа для тестирования
