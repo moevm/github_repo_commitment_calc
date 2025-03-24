@@ -1,6 +1,8 @@
 import argparse
 from datetime import datetime
 import pytz
+import traceback
+
 
 import git_logger
 import export_sheets
@@ -34,7 +36,7 @@ def parse_args():
     )
 
     token = parser.add_mutually_exclusive_group(required=True)
-    token.add_argument('-t', '--token', type=str, help='token github account')
+    token.add_argument('-t', '--token', type=str, help='account access token')
     token.add_argument('--tokens', type=str, help='path to your tokens')
 
     parser.add_argument(
@@ -150,11 +152,12 @@ def main():
     log_pr_comments = args.pr_comments
 
     try:
-        clients = git_logger.GithubClients(tokens)
+        clients = git_logger.GitClients("github", tokens)
     except Exception as e:
         print(e)
+        print(traceback.print_exc())
     else:
-        client = RepositoryFactory.create_api("github", git_logger.login(tokens[0]))
+        client = RepositoryFactory.create_api("github", tokens[0])
         working_repos = git_logger.get_next_repo(clients, repositories)
         start = parse_time(args.start.split('-'))
         finish = parse_time(args.finish.split('-'))
