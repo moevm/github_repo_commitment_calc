@@ -136,8 +136,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
                     head_ref=p.head.ref,
                     base_ref=p.base.ref,
                     merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
-                    files=[], #TODO если возможно
-                    issue_url=None, #TODO если возможно
+                    files=[],  # TODO если возможно
+                    issue_url=None,  # TODO если возможно
                     labels=[label.name for label in p.labels] if p.labels else [],
                     milestone=p.milestone.title if p.milestone else None,
                 )

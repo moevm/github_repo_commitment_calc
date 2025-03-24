@@ -1,7 +1,5 @@
 from interface_wrapper import (
     RepositoryFactory,
-    Repository,
-    Branch,
     IRepositoryAPI
 )
 from time import sleep
@@ -77,7 +75,7 @@ def get_assignee_story(git_object):
     # TODO
     return ""
 
-    assignee_result = ""
+    '''assignee_result = ""
     events = (
         git_object.get_issue_events()
         if type(github_object) is PullRequest.PullRequest
@@ -93,4 +91,4 @@ def get_assignee_story(git_object):
                 assignee_result += "/"
             assignee_result += f"> {assignee}; "
         sleep(TIMEDELTA)
-    return assignee_result
+    return assignee_result'''
