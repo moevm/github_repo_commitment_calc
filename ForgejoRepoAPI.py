@@ -51,7 +51,21 @@ class ForgejoRepoAPI(IRepositoryAPI):
             return None
 
     def get_collaborator_permission(self, repo: Repository, user: User) -> str:
-        return "|||"
+        try:
+            permission = self.client.repository.repo_get_repo_permissions(
+                owner=repo.owner.login,
+                repo=repo.name,
+                collaborator=user.login
+            )
+            return permission.permission
+
+        except Exception as e:
+            if "403" in str(e):
+                logging.error(
+                    f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}.")
+                return f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}."
+            logging.error(f"Failed to get collaborator permission for {user.login} in {repo.name}: {e}")
+            return "Error"
 
     def get_commits(self, repo: Repository, files: bool = True) -> list[Commit]:
         try:
