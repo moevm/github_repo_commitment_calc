@@ -15,6 +15,7 @@ from interface_wrapper import (
 import base64
 from pyforgejo import PyforgejoApi
 
+
 class ForgejoRepoAPI(IRepositoryAPI):
     def __init__(self, client):
         self.client = client
@@ -204,7 +205,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
             result = []
 
             for fork in forks:
-                default_branch = Branch(name=fork.default_branch,last_commit=None)
+                default_branch = Branch(name=fork.default_branch, last_commit=None)
                 owner = fork.owner
 
                 result.append(
