@@ -13,6 +13,7 @@ from interface_wrapper import (
     Invite
 )
 import base64
+from pyforgejo import PyforgejoApi
 
 class ForgejoRepoAPI(IRepositoryAPI):
     def __init__(self, client):
@@ -256,3 +257,50 @@ class ForgejoRepoAPI(IRepositoryAPI):
     def get_invites(self, repo: Repository) -> list[Invite]:
         return []
 
+
+# Точка входа для тестирования
+if __name__ == "__main__":
+    client = PyforgejoApi(api_key="token", base_url="https://codeberg.org/api/v1")
+    api = ForgejoRepoAPI(client)
+
+    repo = api.get_repository("harabat/pyforgejo")
+    if not repo:
+        print("Repository not found.")
+        exit()
+
+    # Вывод информации о репозитории
+    print(f"Repository: {repo.name}, URL: {repo.url}")
+
+    # Получение коммитов
+    commits = api.get_commits(repo)
+    print(f"Total commits: {len(commits)}")
+    for commit in commits[:10]:  # Выведем первые 10 коммитов
+        print(
+            f"Commit: {commit._id}, Message: {commit.message}, Author: {commit.author.username}"
+        )
+
+    # Получение контрибьюторов
+    contributors = api.get_contributors(repo)
+    print(f"Total contributors: {len(contributors)}")
+    for contributor in contributors:
+        print(f"Contributor: {contributor.username}, Email: {contributor.email}")
+
+    # Получение issues
+    issues = api.get_issues(repo)
+    print(f"Total issues: {len(issues)}")
+    for issue in issues[:10]:  # Выведем первые 10 issues
+        print(f"Issue: {issue._id}, Title: {issue.title}, State: {issue.state}")
+
+    # Получение pull requests
+    pulls = api.get_pull_requests(repo)
+    print(f"Total pull requests: {len(pulls)}")
+    for pull in pulls[:10]:  # Выведем первые 10 pull requests
+        print(f"Pull Request: {pull._id}, Title: {pull.title}, State: {pull.state}")
+
+    # Получение веток
+    branches = api.get_branches(repo)
+    print(f"Total branches: {len(branches)}")
+    for branch in branches:
+        print(
+            f"Branch: {branch.name}, Last Commit: {branch.last_commit._id if branch.last_commit else 'None'}"
+        )
