@@ -13,11 +13,25 @@ from interface_wrapper import (
     Invite,
 )
 
+from github import Github, GithubException
+
 
 class GitHubRepoAPI(IRepositoryAPI):
+    def __init__(self, client: Github):
+        self.client = self._client_validation(client)
 
-    def __init__(self, client):
-        self.client = client
+    @staticmethod
+    def _client_validation(client: Github) -> Github:
+        try:
+            client.get_user().login
+        except GithubException as err:
+            logging.error(f'Github: Connect: error {err.data}')
+            logging.error(
+                'Github: Connect: user could not be authenticated please try again.'
+            )
+            exit(1)
+        else:
+            return client
 
     def get_user_data(self, user) -> User:
         return User(
@@ -103,6 +117,7 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
             pulls = self.client.get_repo(repo._id).get_pulls(state='all')
+            print(dir(pulls[0].merged_by))
             return [
                 PullRequest(
                     _id=p.number,

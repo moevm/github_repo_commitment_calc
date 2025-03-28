@@ -1,4 +1,7 @@
 import csv
+from datetime import datetime
+import pytz
+import git_logger
 
 TITLE_LEN = 80
 MIN_SIDE_PADDING = 4
@@ -34,6 +37,10 @@ class logger:
         print(info)
 
     @staticmethod
+    def log_sep():
+        print("-" * TITLE_LEN)
+
+    @staticmethod
     def log_error(error: str):
         # или использовать logging, как в interface_wrapper
         pass
@@ -41,3 +48,21 @@ class logger:
     @staticmethod
     def log_warning(warning: str):
         pass
+
+
+def parse_time(datetime_str) -> datetime:
+    start = (
+        datetime_str[0].split('/') + datetime_str[1].split(':')
+        if len(datetime_str) == 2
+        else datetime_str[0].split('/') + ['00', '00', '00']
+    )
+    start = [int(i) for i in start]
+    start_datetime = datetime(
+        year=start[0],
+        month=start[1],
+        day=start[2],
+        hour=start[3],
+        minute=start[4],
+        second=start[5],
+    )
+    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))

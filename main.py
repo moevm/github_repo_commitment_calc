@@ -1,18 +1,17 @@
 import argparse
-from datetime import datetime
-import pytz
 import traceback
-
 
 import git_logger
 import export_sheets
-import commits_parser
-import pull_requests_parser
-import issues_parser
-import invites_parser
-import wikipars
-import contributors_parser
-from interface_wrapper import RepositoryFactory
+from repo_parser import (
+    commits_parser,
+    contributors_parser,
+    pull_requests_parser,
+    invites_parser,
+    issues_parser,
+    wiki_parser,
+)
+from utils import parse_time
 
 
 def parse_args():
@@ -119,24 +118,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def parse_time(datetime_str):
-    start = (
-        datetime_str[0].split('/') + datetime_str[1].split(':')
-        if len(datetime_str) == 2
-        else datetime_str[0].split('/') + ['00', '00', '00']
-    )
-    start = [int(i) for i in start]
-    start_datetime = datetime(
-        year=start[0],
-        month=start[1],
-        day=start[2],
-        hour=start[3],
-        minute=start[4],
-        second=start[5],
-    )
-    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))
-
-
 def main():
     args = parse_args()
 
@@ -145,31 +126,31 @@ def main():
     else:
         tokens = git_logger.get_tokens_from_file(args.tokens)
 
-    repositories = args.list
+    repositories = git_logger.get_repos_from_file(args.list)
+
     csv_name = args.out
     path_drepo = args.download_repos
     fork_flag = args.forks_include
     log_pr_comments = args.pr_comments
 
+    print(repositories)
+
     try:
-        clients = git_logger.GitClients("github", tokens)
+        clients = git_logger.Clients("github", tokens)
+        binded_repos = git_logger.get_next_binded_repo(clients, repositories)
+        start = parse_time(args.start.split('-'))
+        finish = parse_time(args.finish.split('-'))
     except Exception as e:
         print(e)
         print(traceback.print_exc())
     else:
-        client = RepositoryFactory.create_api("github", tokens[0])
-        working_repos = git_logger.get_next_repo(clients, repositories)
-        start = parse_time(args.start.split('-'))
-        finish = parse_time(args.finish.split('-'))
-
         if args.commits:
             commits_parser.log_commits(
-                client, working_repos, csv_name, start, finish, args.branch, fork_flag
+                binded_repos, csv_name, start, finish, args.branch, fork_flag
             )
         if args.pull_requests:
             pull_requests_parser.log_pull_requests(
-                client,
-                working_repos,
+                binded_repos,
                 csv_name,
                 start,
                 finish,
@@ -177,21 +158,16 @@ def main():
                 log_pr_comments,
             )
         if args.issues:
-            issues_parser.log_issues(
-                client, working_repos, csv_name, tokens[0], start, finish, fork_flag
-            )
+            issues_parser.log_issues(binded_repos, csv_name, start, finish, fork_flag)
         if args.invites:
             invites_parser.log_invitations(
-                client,
-                working_repos,
+                binded_repos,
                 csv_name,
             )
         if args.wikis:
-            wikipars.wikiparser(clients, repositories, path_drepo, csv_name)
+            wiki_parser.wiki_parser(repositories, path_drepo, csv_name)
         if args.contributors:
-            contributors_parser.log_contributors(
-                client, working_repos, csv_name, fork_flag
-            )
+            contributors_parser.log_contributors(binded_repos, csv_name, fork_flag)
         if args.export_google_sheets:
             export_sheets.write_data_to_table(
                 csv_name, args.google_token, args.table_id, args.sheet_id
