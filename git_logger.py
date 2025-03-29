@@ -69,7 +69,6 @@ def get_next_repo(clients: GitClients, repositories):
             print(f'get_next_repo(): failed to load repository "{repo_name}"')
             exit(1)
         else:
-            print(cur_client['token'])
             yield repo, cur_client['token']
 
 

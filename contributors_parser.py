@@ -1,25 +1,28 @@
-from utils import logger
-from time import sleep
+from dataclasses import dataclass, asdict
 from typing import Generator
+from time import sleep
+
+from utils import logger
 from interface_wrapper import IRepositoryAPI, Repository
 
 EMPTY_FIELD = 'Empty field'
 TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = (
-    'repository name',
-    'login',
-    'name',
-    'email',
-    'url',
-    'permissions',
-    'total_commits',
-    'id',
-    'node_id',
-    'type',
-    'bio',
-    'site_admin',
-)
+
+
+@dataclass(kw_only=True, frozen=True)
+class ContributorData:
+    repository_name: str = ''
+    login: str = ''
+    name: str = ''
+    email: str = ''
+    url: str = ''
+    permissions: str = ''
+    total_commits: int = 0
+    node_id: str = ''
+    type: str = ''
+    bio: str = ''
+    site_admin: bool = False
 
 
 def log_repository_contributors(
@@ -36,22 +39,24 @@ def log_repository_contributors(
             repository, contributor
         )
 
-        info_tmp = {
-            'repository name': repository.name,
-            'login': contributor.login,
-            'name': nvl(contributor.username),
-            'email': nvl(contributor_stat['email']),
-            'url': contributor.html_url,
-            'permissions': nvl(contributor_permissions),
-            'total_commits': contributor_stat['total_commits'],
-            'node_id': contributor.node_id,
-            'type': contributor.type,
-            'bio': nvl(contributor.bio),
-            'site_admin': contributor.site_admin,
-        }
+        contributor_data = ContributorData(
+            repository_name=repository.name,
+            login=contributor.login,
+            name=nvl(contributor.username),
+            email=nvl(contributor_stat['email']),
+            url=contributor.html_url,
+            permissions=nvl(contributor_permissions),
+            total_commits=contributor_stat['total_commits'],
+            node_id=contributor.node_id,
+            type=contributor.type,
+            bio=nvl(contributor.bio),
+            site_admin=contributor.site_admin,
+        )
 
-        logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
-        logger.log_to_stdout(info_tmp)
+        info_dict = asdict(contributor_data)
+
+        logger.log_to_csv(csv_name, list(info_dict.keys()), info_dict)
+        logger.log_to_stdout(info_dict)
 
         sleep(TIMEDELTA)
 
@@ -80,7 +85,8 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
 def log_contributors(
     client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool
 ):
-    logger.log_to_csv(csv_name, FIELDNAMES)
+    info = asdict(ContributorData())
+    logger.log_to_csv(csv_name, list(info.keys()))
 
     for repo, token in working_repos:
         try:
