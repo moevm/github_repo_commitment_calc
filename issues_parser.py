@@ -189,7 +189,7 @@ def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
 
 
 def log_issues(
-    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
     start: datetime,
     finish: datetime,

@@ -33,7 +33,7 @@ def log_repository_invitations(
 
 
 def log_invitations(
-    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
 ):
     info = asdict(InviteData())

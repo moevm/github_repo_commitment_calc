@@ -80,7 +80,7 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
 
 
 def log_contributors(
-    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
     fork_flag: bool,
 ):
