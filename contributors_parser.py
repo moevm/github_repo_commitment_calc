@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass
 from time import sleep
 from typing import Generator
 
-from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
+from constants import EMPTY_FIELD, TIMEDELTA
 from interface_wrapper import IRepositoryAPI, Repository
 from utils import logger
 

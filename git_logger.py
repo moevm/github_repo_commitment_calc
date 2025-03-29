@@ -1,6 +1,6 @@
 from time import sleep
 
-from constants import TIMEDELTA, TIMEZONE
+from constants import TIMEDELTA
 from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 
