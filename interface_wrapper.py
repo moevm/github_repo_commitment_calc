@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
-from github import Github, Auth
+from github import Auth, Github
 from pyforgejo import PyforgejoApi
 
 # Настройка логирования

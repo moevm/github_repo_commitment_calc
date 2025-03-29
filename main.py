@@ -1,15 +1,14 @@
 import argparse
 import traceback
 
-import git_logger
-import export_sheets
 import commits_parser
 import contributors_parser
-import pull_requests_parser
+import export_sheets
+import git_logger
 import invites_parser
 import issues_parser
+import pull_requests_parser
 import wikipars
-
 from utils import parse_time
 
 

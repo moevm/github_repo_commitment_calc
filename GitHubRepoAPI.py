@@ -1,3 +1,5 @@
+from github import Github, GithubException
+
 from interface_wrapper import (
     Branch,
     Comment,
@@ -12,8 +14,6 @@ from interface_wrapper import (
     WikiPage,
     logging,
 )
-
-from github import Github, GithubException
 
 
 class GitHubRepoAPI(IRepositoryAPI):

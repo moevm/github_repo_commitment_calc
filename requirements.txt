@@ -6,3 +6,4 @@ pytz==2024.2
 requests==2.32.3
 pyforgejo==2.0.0
 isodate==0.7.2
+unittest-parametrize==1.6.0

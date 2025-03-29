@@ -45,3 +45,4 @@ def log_invitations(
             log_repository_invitations(client, repo, csv_name)
         except Exception as e:
             print(e)
+            exit(1)

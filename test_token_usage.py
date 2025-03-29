@@ -1,10 +1,11 @@
-import unittest
 import argparse
 import sys
+import unittest
 
-from main import run
+from unittest_parametrize import ParametrizedTestCase, param, parametrize
 
 import git_logger
+from main import run
 
 
 def parse_args(args):
@@ -25,7 +26,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-class TestTokenUsage(unittest.TestCase):
+class TestTokenUsage(ParametrizedTestCase):
     def setUp(self):
         test_args = parse_args(sys.argv[1:])
         self.tokens = [test_args.tt1, test_args.tt2]
@@ -79,60 +80,21 @@ class TestTokenUsage(unittest.TestCase):
 
         return limit_start, limit_finish
 
-    def test_commits_parser(self):
-        self.args.commits = True
-        for i in range(2):
-            clients = git_logger.Clients(
-                "github", self._change_tokens_order(self.tokens, i)
-            )
-            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+    @parametrize(
+        'args',
+        [
+            param({'commits': True}, id='commits'),
+            param({'contributors': True}, id='contributors'),
+            param({'issues': True}, id='issues'),
+            param({'invites': True}, id='invites'),
+            param({'pull_requests': True}, id='pull_requests'),
+        ],
+    )
+    def test_commits_parser(self, args: dict[str, bool]):
+        # patch args
+        for k, v in args.items():
+            setattr(self.args, k, v)
 
-            limit_start, limit_finish = self._get_usage(binded_repos, clients)
-
-            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
-            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
-
-    def test_contributors_parser(self):
-        self.args.contributors = True
-        for i in range(2):
-            clients = git_logger.Clients(
-                "github", self._change_tokens_order(self.tokens, i)
-            )
-            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
-
-            limit_start, limit_finish = self._get_usage(binded_repos, clients)
-
-            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
-            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
-
-    def test_issues_parser(self):
-        self.args.issues = True
-        for i in range(2):
-            clients = git_logger.Clients(
-                "github", self._change_tokens_order(self.tokens, i)
-            )
-            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
-
-            limit_start, limit_finish = self._get_usage(binded_repos, clients)
-
-            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
-            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
-
-    def test_invites_parser(self):
-        self.args.invites = True
-        for i in range(2):
-            clients = git_logger.Clients(
-                "github", self._change_tokens_order(self.tokens, i)
-            )
-            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
-
-            limit_start, limit_finish = self._get_usage(binded_repos, clients)
-
-            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
-            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
-
-    def test_pull_requests_parser(self):
-        self.args.pull_requests = True
         for i in range(2):
             clients = git_logger.Clients(
                 "github", self._change_tokens_order(self.tokens, i)

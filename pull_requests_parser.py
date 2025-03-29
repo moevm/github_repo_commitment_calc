@@ -1,8 +1,8 @@
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from time import sleep
 from typing import Generator
-from datetime import datetime
 
 import pytz
 import requests
@@ -39,11 +39,11 @@ class PullRequestData:
 
 @dataclass(kw_only=True, frozen=True)
 class PullRequestDataWithComment(PullRequestData):
-    body: str = ''
-    created_at: str = ''
-    author_name: str = ''
-    author_login: str = ''
-    author_email: str = ''
+    comment_body: str = ''
+    comment_created_at: str = ''
+    comment_author_name: str = ''
+    comment_author_login: str = ''
+    comment_author_email: str = ''
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -165,12 +165,12 @@ def log_repositories_pr(
             if comments:
                 for comment in comments:
                     comment_data = PullRequestDataWithComment(
-                        **pr_data,
-                        body=comment.body,
-                        created_at=str(comment.created_at),
-                        author_name=comment.author.name,
-                        author_login=comment.author.login,
-                        author_email=nvl(comment.author.email),
+                        **asdict(pr_data),
+                        comment_body=comment.body,
+                        comment_created_at=str(comment.created_at),
+                        comment_author_name=comment.author.name,
+                        comment_author_login=comment.author.login,
+                        comment_author_email=nvl(comment.author.email),
                     )
                     comment_data = asdict(comment_data)
 
@@ -222,3 +222,4 @@ def log_pull_requests(
             sleep(TIMEDELTA)
         except Exception as e:
             print(e)
+            exit(1)

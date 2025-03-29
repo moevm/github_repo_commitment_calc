@@ -4,7 +4,6 @@ import time
 from git import Repo, exc
 
 from constants import WIKI_FIELDNAMES
-
 from utils import logger
 
 
