@@ -1,7 +1,4 @@
-from interface_wrapper import (
-    RepositoryFactory,
-    IRepositoryAPI
-)
+from interface_wrapper import RepositoryFactory, IRepositoryAPI
 from time import sleep
 
 TIMEDELTA = 0.05
@@ -25,8 +22,13 @@ class GitClients:
         self.clients = self._init_clients(source, tokens, base_url)
         self.cur_client = None
 
-    def _init_clients(self, source: str, tokens: list[str], base_url: str | None) -> list[dict]:
-        clients = [{"client": login(source, token, base_url), "token": token} for token in tokens]
+    def _init_clients(
+        self, source: str, tokens: list[str], base_url: str | None
+    ) -> list[dict]:
+        clients = [
+            {"client": login(source, token, base_url), "token": token}
+            for token in tokens
+        ]
 
         return clients
 

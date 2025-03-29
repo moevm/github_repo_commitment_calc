@@ -175,7 +175,9 @@ class IRepositoryAPI(ABC):
 # Фабрика для создания API
 class RepositoryFactory:
     @staticmethod
-    def create_api(source: str, token: str, base_url: str | None = None) -> IRepositoryAPI:
+    def create_api(
+        source: str, token: str, base_url: str | None = None
+    ) -> IRepositoryAPI:
         from GitHubRepoAPI import GitHubRepoAPI
         from ForgejoRepoAPI import ForgejoRepoAPI
 
@@ -183,7 +185,9 @@ class RepositoryFactory:
             return GitHubRepoAPI(Github(token))
         elif source == 'forgejo':
             if not isinstance(base_url, str):
-                raise ValueError(f"base_url for PyforgejoApi should be str, got {type(base_url)}")
+                raise ValueError(
+                    f"base_url for PyforgejoApi should be str, got {type(base_url)}"
+                )
             return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
         else:
             raise ValueError(f"Unsupported source: {source}")
