@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
-from github import Github
+from github import Github, Auth
 from pyforgejo import PyforgejoApi
 
 # Настройка логирования
@@ -182,7 +182,7 @@ class RepositoryFactory:
         from GitHubRepoAPI import GitHubRepoAPI
 
         if source == 'github':
-            return GitHubRepoAPI(Github(token))
+            return GitHubRepoAPI(Github(auth=Auth.Token(token)))
         elif source == 'forgejo':
             if not isinstance(base_url, str):
                 raise ValueError(

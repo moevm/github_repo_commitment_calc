@@ -1,4 +1,3 @@
-import csv
 import os
 import time
 
@@ -6,25 +5,16 @@ from git import Repo, exc
 
 from constants import WIKI_FIELDNAMES
 
-
-def log_wiki_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=WIKI_FIELDNAMES)
-        writer.writerow(info)
+from utils import logger
 
 
-def wikiparser(client, repositories, path_drepo, csv_name):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(WIKI_FIELDNAMES)
+def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):
+    logger.log_to_csv(csv_name, WIKI_FIELDNAMES)
 
-    # Создаем список репозиториев из файла
-    with open(repositories, 'r') as file:
-        list_repos = [x for x in file.read().split('\n') if x]
     error_repos = []
 
     data_changes = []
-    for name_rep in list_repos:
+    for name_rep in repositories:
         # Проверяем, есть ли репозиторий в папке
         dir_path = path_drepo + "/" + name_rep
         if os.path.exists(dir_path):
@@ -48,7 +38,7 @@ def wikiparser(client, repositories, path_drepo, csv_name):
                 error_repos.append(name_rep)
                 continue
 
-        print("=" * 20, name_rep, "=" * 20)
+        logger.log_title(name_rep)
         # Вывод изменений
         # Хэш пустого дерева для сравнения с первым коммитом. Способ был найден здесь:
         # https://stackoverflow.com/questions/33916648/get-the-diff-details-of-first-commit-in-gitpython
@@ -91,16 +81,19 @@ def wikiparser(client, repositories, path_drepo, csv_name):
             data_commit["revision id"] = commit
             data_commit["added lines"] = commit.stats.total["insertions"]
             data_commit["deleted lines"] = commit.stats.total["deletions"]
+
             for fieldname in data_commit:
                 print(fieldname, data_commit[fieldname], sep=': ')
-            print("-" * 40)
-            log_wiki_to_csv(data_commit, csv_name)
+
+            logger.log_sep()
+            logger.log_to_csv(csv_name, data_commit)
+
             data_changes.append(data_commit)
 
     # Вывод репозиториев, с которыми возникли ошибки
     if error_repos:
-        print("!=====Проблемные репозитории=====!")
+        logger.log_title("! Проблемные репозитории !")
         for rep in error_repos:
-            print(rep)
+            logger.log_to_stdout(rep)
 
     return data_changes

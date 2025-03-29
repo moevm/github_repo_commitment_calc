@@ -1,5 +1,7 @@
 from dataclasses import asdict, dataclass
 from time import sleep
+from typing import Generator
+from datetime import datetime
 
 import pytz
 
@@ -62,12 +64,17 @@ def log_repository_commits(
 
 
 def log_commits(
-    client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    branch: str,
+    fork_flag: bool,
 ):
     info = asdict(CommitData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repository_commits(client, repo, csv_name, start, finish, branch)

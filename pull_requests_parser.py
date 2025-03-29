@@ -1,6 +1,8 @@
 import json
 from dataclasses import asdict, dataclass
 from time import sleep
+from typing import Generator
+from datetime import datetime
 
 import pytz
 import requests
@@ -187,18 +189,17 @@ def log_repositories_pr(
 
 
 def log_pull_requests(
-    client: IRepositoryAPI,
-    working_repos,
-    csv_name,
-    start,
-    finish,
-    fork_flag,
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    fork_flag: bool,
     log_comments=False,
 ):
     info = asdict(PullRequestDataWithComment())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repositories_pr(

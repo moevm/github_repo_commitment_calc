@@ -1,12 +1,37 @@
-from interface_wrapper import (Branch, Comment, Commit, Contributor, Invite,
-                               IRepositoryAPI, Issue, PullRequest, Repository,
-                               User, WikiPage, logging)
+from interface_wrapper import (
+    Branch,
+    Comment,
+    Commit,
+    Contributor,
+    Invite,
+    IRepositoryAPI,
+    Issue,
+    PullRequest,
+    Repository,
+    User,
+    WikiPage,
+    logging,
+)
+
+from github import Github, GithubException
 
 
 class GitHubRepoAPI(IRepositoryAPI):
+    def __init__(self, client: Github):
+        self.client = self._client_validation(client)
 
-    def __init__(self, client):
-        self.client = client
+    @staticmethod
+    def _client_validation(client: Github) -> Github:
+        try:
+            client.get_user().login
+        except GithubException as err:
+            logging.error(f'Github: Connect: error {err.data}')
+            logging.error(
+                'Github: Connect: user could not be authenticated please try again.'
+            )
+            exit(1)
+        else:
+            return client
 
     def get_user_data(self, user) -> User:
         return User(

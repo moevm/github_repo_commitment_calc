@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass
 from time import sleep
+from typing import Generator
 
 from constants import TIMEDELTA
 from interface_wrapper import IRepositoryAPI, Repository
@@ -31,11 +32,14 @@ def log_repository_invitations(
         sleep(TIMEDELTA)
 
 
-def log_invitations(client: IRepositoryAPI, working_repos, csv_name: str):
+def log_invitations(
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
+    csv_name: str,
+):
     info = asdict(InviteData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         logger.log_title(repo.name)
         try:
             log_repository_invitations(client, repo, csv_name)

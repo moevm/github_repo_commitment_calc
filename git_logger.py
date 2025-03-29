@@ -16,22 +16,40 @@ def get_tokens_from_file(tokens_path: str) -> list[str]:
     return tokens
 
 
-class GitClients:
+def get_repos_from_file(repos_path: str) -> list[str]:
+    with open(repos_path, 'r') as file:
+        list_repos = [x for x in file.read().split('\n') if x]
+
+    return list_repos
+
+
+class Clients:
     def __init__(self, source: str, tokens: list[str], base_url: str | None = None):
-        self.clients = self._init_clients(source, tokens, base_url)
-        self.cur_client = None
+        # Возможно это можно переписать покрасивее
+        if source == 'github':
+            self.clients = self._init_clients(source, tokens, base_url)
+        elif base_url == 'forgejo':
+            self.client = RepositoryFactory.create_api(source, tokens[0], base_url)
+            self.token = tokens[0]
+        else:
+            print(f"Unavailable source {source}, use [ 'github' | 'forgejo' ] instead")
+
+        self.source = source
 
     def _init_clients(
         self, source: str, tokens: list[str], base_url: str | None
     ) -> list[dict]:
         clients = [
-            {"client": login(source, token, base_url), "token": token}
+            {
+                "client": RepositoryFactory.create_api(source, token, base_url),
+                "token": token,
+            }
             for token in tokens
         ]
 
         return clients
 
-    def get_next_client(self) -> IRepositoryAPI:
+    def _get_next_git_client(self) -> tuple[IRepositoryAPI, str]:
         client = None
         max_remaining_limit = -1
 
@@ -51,24 +69,29 @@ class GitClients:
         if client is None:
             raise Exception("No git clients available")
 
-        self.cur_client = client
-        return client
+        return client['client'], client['token']
+
+    def _get_next_forgejo_client(self) -> tuple[IRepositoryAPI, str]:
+        return self.client, self.token
+
+    def get_next_client(self) -> tuple[IRepositoryAPI, str]:
+        if self.source == 'github':
+            return self._get_next_git_client()
+        elif self.source == 'forgejo':
+            return self._get_next_forgejo_client
 
 
-def get_next_repo(clients: GitClients, repositories):
-    with open(repositories, 'r') as file:
-        list_repos = [x for x in file.read().split('\n') if x]
-    print(list_repos)
-    for repo_name in list_repos:
+def get_next_binded_repo(clients: Clients, repositories: list[str]):
+    for repo_name in repositories:
         try:
-            cur_client = clients.get_next_client()
-            repo = cur_client['client'].get_repository(repo_name)
+            client, token = clients.get_next_client()
+            repo = client.get_repository(repo_name)
         except Exception as err:
             print(f'get_next_repo(): error {err}')
             print(f'get_next_repo(): failed to load repository "{repo_name}"')
             exit(1)
         else:
-            yield repo, cur_client['token']
+            yield client, repo, token
 
 
 def get_assignee_story(git_object):

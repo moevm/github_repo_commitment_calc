@@ -80,12 +80,14 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
 
 
 def log_contributors(
-    client: IRepositoryAPI, working_repos: Generator, csv_name: str, fork_flag: bool
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
+    csv_name: str,
+    fork_flag: bool,
 ):
     info = asdict(ContributorData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repository_contributors(client, repo, csv_name)
