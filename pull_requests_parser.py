@@ -189,7 +189,7 @@ def log_repositories_pr(
 
 
 def log_pull_requests(
-    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
     start: datetime,
     finish: datetime,
