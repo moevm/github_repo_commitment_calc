@@ -1,8 +1,7 @@
-from interface_wrapper import RepositoryFactory, IRepositoryAPI
 from time import sleep
 
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
+from constants import TIMEDELTA
+from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 
 def login(source, token, base_url):
@@ -69,7 +68,6 @@ def get_next_repo(clients: GitClients, repositories):
             print(f'get_next_repo(): failed to load repository "{repo_name}"')
             exit(1)
         else:
-            print(cur_client['token'])
             yield repo, cur_client['token']
 
 

@@ -1,19 +1,10 @@
-from git import Repo, exc
+import csv
 import os
 import time
-import csv
 
-WIKI_FIELDNAMES = [
-    'repository name',
-    'author name',
-    'author login',
-    'datetime',
-    'page',
-    'action',
-    'revision id',
-    'added lines',
-    'deleted lines',
-]
+from git import Repo, exc
+
+from constants import WIKI_FIELDNAMES
 
 
 def log_wiki_to_csv(info, csv_name):
