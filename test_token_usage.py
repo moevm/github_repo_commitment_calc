@@ -1,27 +1,12 @@
 import unittest
 import argparse
 import sys
-from utils import parse_time
-from datetime import datetime
-from interface_wrapper import RepositoryFactory, IRepositoryAPI
+
+from main import run
 
 import git_logger
 
-from repo_parser import (
-    commits_parser,
-    contributors_parser,
-    pull_requests_parser,
-    invites_parser,
-    issues_parser,
-    wiki_parser,
-)
-
-
-def fix_rate_limit(clients: git_logger.Clients):
-    return [c['client'].get_rate_limiting() for c in clients.clients]
-
-
-def parse_args():
+def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--tt1', type=str, required=True, help='first test token')
     parser.add_argument('--tt2', type=str, required=True, help='second test token')
@@ -36,45 +21,117 @@ def parse_args():
 
     parser.add_argument('-o', '--out', type=str, required=True, help='output filename')
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
-
-class TestCommitsParser(unittest.TestCase):
+class TestTokenUsage(unittest.TestCase):
     def setUp(self):
-        args = parse_args()
-        print(args)
+        test_args = parse_args(sys.argv[1:])
 
-        self.token1 = args.tt1
-        self.token2 = args.tt2
-        self.repo = args.test_repo
-        self.output_csv = args.out
+        self.tokens = [test_args.tt1, test_args.tt2]
+        self.repo = test_args.repo
+        self.output_csv = test_args.out
 
-        self.start = parse_time('2000/01/01-00:00:00')
-        self.finish = parse_time('2400/01/01-00:00:00')
-        self.branch = 'default'
-        self.fork_flag = False
-
-    def test_commits_parser(self):
-        clients1 = git_logger.Clients("github", [self.token1, self.token2])
-        binded_repos1 = git_logger.get_next_binded_repo(clients1, [self.test_repo])
-
-        rate_limit_start = fix_rate_limit(clients1)
-
-        commits_parser.log_commits(
-            binded_repos1,
-            self.output_csv,
-            self.start,
-            self.finish,
-            self.branch,
-            self.fork_flag,
+        self.args = argparse.Namespace(
+            commits=False,
+            issues=False,
+            pull_requests=False,
+            wikis=False,
+            contributors=False,
+            invites=False,
+            start="2000/01/01-00:00:00",
+            finish="2400/01/01-00:00:00",
+            branch="default",
+            forks_include=False,
+            pr_comments=False,
+            export_google_sheets=False,
+            out=test_args.out,
         )
 
-        rate_limit_finish = fix_rate_limit(clients1)
+    @staticmethod
+    def _get_rate_limit(clients: git_logger.Clients):
+        return [c['client'].get_rate_limiting()[0] for c in clients.clients]
 
-        print(rate_limit_start, rate_limit_finish)
+    @staticmethod
+    def _is_only_one_token_used(limit_start, limit_finish):
+        return (bool(limit_start[0] - limit_finish[0])
+            != bool(limit_start[1] - limit_finish[1]))
+    
+    @staticmethod
+    def _is_max_token_used(limit_start, limit_finish):
+        if limit_start[0] - limit_finish[0]:
+            return limit_start[0] == max(limit_start)
+        else:
+            return limit_start[1] == max(limit_start)
+    
+    @staticmethod
+    def _change_tokens_order(tokens, key):
+        key %= len(tokens)
+        return tokens[key:] + tokens[:key]
 
-        pass
+    def _get_usage(self, binded_repos, clients):
+        limit_start = self._get_rate_limit(clients)
 
+        run(self.args, binded_repos)
+
+        limit_finish = self._get_rate_limit(clients)
+
+        return limit_start, limit_finish
+
+    def test_commits_parser(self):
+        self.args.commits = True
+        self.assertTrue(False)
+        for i in range(2):
+            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+
+            limit_start, limit_finish = self._get_usage(binded_repos, clients)
+
+            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
+            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
+
+    def test_contributors_parser(self):
+        self.args.contributors = True
+        for i in range(2):
+            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+
+            limit_start, limit_finish = self._get_usage(binded_repos, clients)
+
+            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
+            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
+
+    def test_issues_parser(self):
+        self.args.issues = True
+        for i in range(2):
+            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+
+            limit_start, limit_finish = self._get_usage(binded_repos, clients)
+
+            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
+            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
+
+    def test_invites_parser(self):
+        self.args.invites = True
+        for i in range(2):
+            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+
+            limit_start, limit_finish = self._get_usage(binded_repos, clients)
+
+            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
+            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
+
+    def test_pull_requests_parser(self):
+        self.args.pull_requests = True
+        for i in range(2):
+            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
+
+            limit_start, limit_finish = self._get_usage(binded_repos, clients)
+
+            self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
+            self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=[sys.argv[0]])

@@ -2,8 +2,6 @@ from interface_wrapper import RepositoryFactory, IRepositoryAPI
 from time import sleep
 
 TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-
 
 def login(source, token, base_url):
     client = RepositoryFactory.create_api(source, token, base_url)

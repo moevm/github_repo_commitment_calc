@@ -1,14 +1,13 @@
 import csv
 from datetime import datetime
 import pytz
-import git_logger
 
 TITLE_LEN = 80
 MIN_SIDE_PADDING = 4
 SIDE_WHITE_SPACES = 1
 
-
 class logger:
+    #TODO: отключение вывода в stdout
     @staticmethod
     def log_title(title: str, title_len: int = TITLE_LEN):
         final_len = max(
@@ -49,6 +48,7 @@ class logger:
     def log_warning(warning: str):
         pass
 
+TIMEZONE = 'Europe/Moscow'
 
 def parse_time(datetime_str) -> datetime:
     start = (
@@ -65,4 +65,4 @@ def parse_time(datetime_str) -> datetime:
         minute=start[4],
         second=start[5],
     )
-    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))
+    return start_datetime.astimezone(pytz.timezone(TIMEZONE))

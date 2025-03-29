@@ -118,6 +118,42 @@ def parse_args():
     return parser.parse_args()
 
 
+def run(args, binded_repos, repos_for_wiki=None):
+    start = parse_time(args.start.split('-'))
+    finish = parse_time(args.finish.split('-'))
+
+    if args.commits:
+        commits_parser.log_commits(
+            binded_repos, args.out, start, finish, args.branch, args.forks_include
+        )
+    if args.pull_requests:
+        pull_requests_parser.log_pull_requests(
+            binded_repos,
+            args.out,
+            start,
+            finish,
+            args.forks_include,
+            args.pr_comments,
+        )
+    if args.issues:
+        issues_parser.log_issues(
+            binded_repos, args.out, start, finish, args.forks_include
+        )
+    if args.invites:
+        invites_parser.log_invitations(
+            binded_repos,
+            args.out,
+        )
+    if args.contributors:
+        contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
+    if args.wikis:
+        wiki_parser.wiki_parser(repos_for_wiki, args.download_repos, args.out)
+    if args.export_google_sheets:
+        export_sheets.write_data_to_table(
+            args.out, args.google_token, args.table_id, args.sheet_id
+        )
+
+
 def main():
     args = parse_args()
 
@@ -128,51 +164,16 @@ def main():
 
     repositories = git_logger.get_repos_from_file(args.list)
 
-    csv_name = args.out
-    path_drepo = args.download_repos
-    fork_flag = args.forks_include
-    log_pr_comments = args.pr_comments
-
     print(repositories)
 
     try:
         clients = git_logger.Clients("github", tokens)
         binded_repos = git_logger.get_next_binded_repo(clients, repositories)
-        start = parse_time(args.start.split('-'))
-        finish = parse_time(args.finish.split('-'))
     except Exception as e:
         print(e)
         print(traceback.print_exc())
     else:
-        if args.commits:
-            commits_parser.log_commits(
-                binded_repos, csv_name, start, finish, args.branch, fork_flag
-            )
-        if args.pull_requests:
-            pull_requests_parser.log_pull_requests(
-                binded_repos,
-                csv_name,
-                start,
-                finish,
-                fork_flag,
-                log_pr_comments,
-            )
-        if args.issues:
-            issues_parser.log_issues(binded_repos, csv_name, start, finish, fork_flag)
-        if args.invites:
-            invites_parser.log_invitations(
-                binded_repos,
-                csv_name,
-            )
-        if args.wikis:
-            wiki_parser.wiki_parser(repositories, path_drepo, csv_name)
-        if args.contributors:
-            contributors_parser.log_contributors(binded_repos, csv_name, fork_flag)
-        if args.export_google_sheets:
-            export_sheets.write_data_to_table(
-                csv_name, args.google_token, args.table_id, args.sheet_id
-            )
-
+        run(args, binded_repos)
 
 if __name__ == '__main__':
     main()

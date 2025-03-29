@@ -3,7 +3,7 @@ from datetime import datetime
 from dataclasses import dataclass
 import logging
 
-from github import Github
+from github import Github, Auth
 from pyforgejo import PyforgejoApi
 
 # Настройка логирования
@@ -182,7 +182,7 @@ class RepositoryFactory:
         from ForgejoRepoAPI import ForgejoRepoAPI
 
         if source == 'github':
-            return GitHubRepoAPI(Github(token))
+            return GitHubRepoAPI(Github(auth=Auth.Token(token)))
         elif source == 'forgejo':
             if not isinstance(base_url, str):
                 raise ValueError(
