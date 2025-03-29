@@ -4,9 +4,20 @@ import sys
 import isodate
 from pyforgejo import PyforgejoApi
 
-from interface_wrapper import (Branch, Comment, Commit, Contributor, Invite,
-                               IRepositoryAPI, Issue, PullRequest, Repository,
-                               User, WikiPage, logging)
+from interface_wrapper import (
+    Branch,
+    Comment,
+    Commit,
+    Contributor,
+    Invite,
+    IRepositoryAPI,
+    Issue,
+    PullRequest,
+    Repository,
+    User,
+    WikiPage,
+    logging,
+)
 
 
 class ForgejoRepoAPI(IRepositoryAPI):

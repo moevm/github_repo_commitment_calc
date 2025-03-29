@@ -2,12 +2,10 @@ import argparse
 import sys
 import unittest
 
+from unittest_parametrize import ParametrizedTestCase, param, parametrize
+
 import git_logger
 from main import run
-
-from unittest_parametrize import parametrize
-from unittest_parametrize import ParametrizedTestCase
-from unittest_parametrize import param
 
 
 def parse_args(args):
