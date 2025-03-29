@@ -2,7 +2,7 @@
 
 ## Установка зависимостей
 
-Для корректной работы приложения необходимо установить зависимости, указанные в `requirements.txt`, чтобы это сделать 
+Для корректной работы приложения необходимо установить зависимости, указанные в `requirements.txt`, чтобы это сделать
 используйте команду:
 
 ```commandline
@@ -10,12 +10,12 @@ pip install -r requirements.txt
 ```
 
 ## Docker run
-1. Build via:  
+1. Build via:
 ``` bash
 docker build -t checking_repo .
 ```
 
-2. Run via:  
+2. Run via:
 ``` bash
 docker run -v $(pwd)/output:/app/output checking_repo [--invites] [--commites] [--etc...] -t <insert_token> -l <insert_list> -o ./output/res.csv
 ```
@@ -59,7 +59,7 @@ python3 main.py --contributors (-t token (github токен вместо token) 
 
 В таблице Service Accounts будет запись, нажимаем на нее. Сверху будет вкладка keys. Add key -> Create new key -> json -> create. Получаем нужный json файл.
 ##  Получение table_id и sheet_id для работы с Google таблицей:
-После создания таблицы в google sheets, получаем ссылку на эту таблицу и вводим ее в любом поисковике.В получившемся запросе после строчки "d/" будет находиться table_id, после строчки "gid=" будет находиться sheet_id 
+После создания таблицы в google sheets, получаем ссылку на эту таблицу и вводим ее в любом поисковике.В получившемся запросе после строчки "d/" будет находиться table_id, после строчки "gid=" будет находиться sheet_id
 ## Экспорт таблицы в Google Sheets:
 
 ``` commandline
@@ -75,3 +75,32 @@ python3 main.py [-p, --pull_requests] (-t token (github токен вместо 
 
 Каждый токен записывается в отдельную строку.
 Токены должны быть привзязаны к разным github аккаунтам. Токены, привязанные к одному аккаунту имеют общий rate_limit.
+
+
+Для проверки того, что квота расходуется нескольких токенов предалгаю такой фалидационный скрипт `check.py`
+```python
+from github import Auth, Github
+
+
+def show_quota():
+    tokens = [...]
+    clients = [Github(auth=Auth.Token(token)) for token in tokens]
+    print([
+      (client.get_user().login, client.rate_limiting)
+      for client in clients
+    ])
+```
+```console
+$ python3 -i check.py
+>>> show_quota()
+>>> show_quota()
+>>> show_quota()
+```
+
+Результаты:
+```
+>>> show_quota()
+[('thehighestmath', (4541, 5000)), ('qweqweqwe322', (4997, 5000))] # before launch collect data
+>>> show_quota()
+[('thehighestmath', (2869, 5000)), ('qweqweqwe322', (2479, 5000))] # after launch collect data (collected 12 repos)
+```
