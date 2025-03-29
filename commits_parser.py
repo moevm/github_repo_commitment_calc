@@ -1,24 +1,24 @@
-from utils import logger
-import pytz
+from dataclasses import asdict, dataclass
 from time import sleep
+from typing import Generator
+from datetime import datetime
 
-# from github import Github, Repository, GithubException, PullRequest
+import pytz
+
+from constants import EMPTY_FIELD, GOOGLE_MAX_CELL_LEN, TIMEDELTA, TIMEZONE
 from interface_wrapper import IRepositoryAPI, Repository
+from utils import logger
 
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = (
-    'repository name',
-    'author name',
-    'author login',
-    'author email',
-    'date and time',
-    'changed files',
-    'commit id',
-    'branch',
-)
-GOOGLE_MAX_CELL_LEN = 50000
+
+@dataclass(kw_only=True, frozen=True)
+class CommitData:
+    repository_name: str = ''
+    author_name: str = ''
+    author_email: str = ''
+    datetime: str = ''
+    changed_files: str = ''
+    commit_id: str = ''
+    branch: str = ''
 
 
 def log_repository_commits(
@@ -45,29 +45,36 @@ def log_repository_commits(
                 continue
 
             changed_files = '; '.join([file for file in commit.files])
-            commit_data = [
-                repository.name,
-                commit.author.username,
-                commit.author.email or EMPTY_FIELD,
-                commit.date,
-                changed_files[:GOOGLE_MAX_CELL_LEN],
-                commit._id,
-                branch,
-            ]
-            info = dict(zip(FIELDNAMES, commit_data))
+            changed_files = changed_files[:GOOGLE_MAX_CELL_LEN]
+            commit_data = CommitData(
+                repository_name=repository.name,
+                author_name=commit.author.username,
+                author_email=commit.author.email or EMPTY_FIELD,
+                datetime=commit.date.astimezone(pytz.timezone(TIMEZONE)).isoformat(),
+                changed_files=changed_files,
+                commit_id=commit._id,
+                branch=branch,
+            )
+            info = asdict(commit_data)
 
-            logger.log_to_csv(csv_name, FIELDNAMES, info)
+            logger.log_to_csv(csv_name, list(info.keys()), info)
             logger.log_to_stdout(info)
 
             sleep(TIMEDELTA)
 
 
 def log_commits(
-    client: IRepositoryAPI, working_repos, csv_name, start, finish, branch, fork_flag
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    branch: str,
+    fork_flag: bool,
 ):
-    logger.log_to_csv(csv_name, FIELDNAMES)
+    info = asdict(CommitData())
+    logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repository_commits(client, repo, csv_name, start, finish, branch)

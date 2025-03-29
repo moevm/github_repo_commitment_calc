@@ -3,16 +3,14 @@ import traceback
 
 import git_logger
 import export_sheets
-from repo_parser import (
-    commits_parser,
-    contributors_parser,
-    pull_requests_parser,
-    invites_parser,
-    issues_parser,
-    wiki_parser,
-)
-from utils import parse_time
+import commits_parser
+import contributors_parser
+import pull_requests_parser
+import invites_parser
+import issues_parser
+import wikipars
 
+from utils import parse_time
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -117,7 +115,6 @@ def parse_args():
                 action.required = True
     return parser.parse_args()
 
-
 def run(args, binded_repos, repos_for_wiki=None):
     start = parse_time(args.start.split('-'))
     finish = parse_time(args.finish.split('-'))
@@ -147,12 +144,11 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.contributors:
         contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
     if args.wikis:
-        wiki_parser.wiki_parser(repos_for_wiki, args.download_repos, args.out)
+        wikipars.wiki_parser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:
         export_sheets.write_data_to_table(
             args.out, args.google_token, args.table_id, args.sheet_id
         )
-
 
 def main():
     args = parse_args()

@@ -1,17 +1,6 @@
-from interface_wrapper import (
-    logging,
-    Repository,
-    Contributor,
-    Commit,
-    Issue,
-    PullRequest,
-    WikiPage,
-    Branch,
-    IRepositoryAPI,
-    User,
-    Comment,
-    Invite,
-)
+from interface_wrapper import (Branch, Comment, Commit, Contributor, Invite,
+                               IRepositoryAPI, Issue, PullRequest, Repository,
+                               User, WikiPage, logging)
 
 from github import Github, GithubException
 
@@ -117,7 +106,6 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
             pulls = self.client.get_repo(repo._id).get_pulls(state='all')
-            print(dir(pulls[0].merged_by))
             return [
                 PullRequest(
                     _id=p.number,

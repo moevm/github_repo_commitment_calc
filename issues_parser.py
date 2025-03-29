@@ -1,38 +1,46 @@
-from utils import logger
+import json
+from dataclasses import asdict, dataclass
+from time import sleep
+from typing import Generator
+from datetime import datetime
+
 import pytz
 import requests
-import json
-from time import sleep
+
+from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from git_logger import get_assignee_story
 from interface_wrapper import IRepositoryAPI, Repository
+from utils import logger
 
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = (
-    'repository name',
-    'number',
-    'title',
-    'state',
-    'task',
-    'created at',
-    'creator name',
-    'creator login',
-    'creator email',
-    'closer name',
-    'closer login',
-    'closer email',
-    'closed at',
-    'comment body',
-    'comment created at',
-    'comment author name',
-    'comment author login',
-    'comment author email',
-    'assignee story',
-    'connected pull requests',
-    'labels',
-    'milestone',
-)
+
+@dataclass(kw_only=True, frozen=True)
+class IssueData:
+    repository_name: str = ''
+    number: int = 0
+    title: str = ''
+    state: str = ''
+    task: str = ''
+    created_at: str = ''
+    creator_name: str = ''
+    creator_login: str = ''
+    creator_email: str = ''
+    closed_at: str | None = None
+    closer_name: str | None = None
+    closer_login: str | None = None
+    closer_email: str | None = None
+    assignee_story: str = ''
+    connected_pull_requests: str = ''
+    labels: str = ''
+    milestone: str = ''
+
+
+@dataclass(kw_only=True, frozen=True)
+class IssueDataWithComment(IssueData):
+    body: str = ''
+    created_at: str = ''
+    author_name: str = ''
+    author_login: str = ''
+    author_email: str = ''
 
 
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
@@ -122,6 +130,7 @@ def log_repository_issues(
         return EMPTY_FIELD if obj is None else getattr(obj, attr)
 
     issues = client.get_issues(repository)
+
     for issue in issues:
         if (
             issue.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
@@ -129,65 +138,67 @@ def log_repository_issues(
         ):
             continue
 
-        info_tmp = {
-            'repository name': repository.name,
-            'number': issue._id,
-            'title': issue.title,
-            'state': issue.state,
-            'task': issue.body,
-            'created at': issue.created_at,
-            'creator name': issue.user.username,
-            'creator login': issue.user.login,
-            'creator email': issue.user.email,
-            'closed at': nvl(issue.closed_at),
-            'closer name': issue.closed_by.username if issue.closed_by else None,
-            'closer login': issue.closed_by.login if issue.closed_by else None,
-            'closer email': issue.closed_by.email if issue.closed_by else None,
-            'comment body': EMPTY_FIELD,
-            'comment created at': EMPTY_FIELD,
-            'comment author name': EMPTY_FIELD,
-            'comment author login': EMPTY_FIELD,
-            'comment author email': EMPTY_FIELD,
-            'assignee story': get_assignee_story(issue),
-            'connected pull requests': (
-                EMPTY_FIELD
-                if issue._id is None
-                else get_connected_pulls(
-                    issue._id, repository.owner, repository.name, token
-                )
+        issue_data = IssueData(
+            repository_name=repository.name,
+            number=issue._id,
+            title=issue.title,
+            state=issue.state,
+            task=issue.body,
+            created_at=str(issue.created_at),
+            creator_name=issue.user.username,
+            creator_login=issue.user.login,
+            creator_email=issue.user.email,
+            closed_at=nvl(issue.closed_at),
+            closer_name=issue.closed_by.username if issue.closed_by else None,
+            closer_login=issue.closed_by.login if issue.closed_by else None,
+            closer_email=issue.closed_by.email if issue.closed_by else None,
+            assignee_story=get_assignee_story(issue),
+            connected_pull_requests=(
+                get_connected_pulls(issue._id, repository.owner, repository.name, token)
+                if issue._id is not None
+                else EMPTY_FIELD
             ),
-            'labels': (
-                EMPTY_FIELD
-                if issue.labels is None
-                else ';'.join([label for label in issue.labels])
-            ),
-            'milestone': get_info(issue.milestone, 'title'),
-        }
+            labels=';'.join(issue.labels) if issue.labels else EMPTY_FIELD,
+            milestone=get_info(issue.milestone, 'title'),
+        )
+
         comments = client.get_comments(repository, issue)
-        if len(comments) > 0:
-            for comment in comments:
-                info = info_tmp
-                info['comment body'] = comment.body
-                info['comment created at'] = comment.created_at
-                info['comment author name'] = comment.author.username
-                info['comment author login'] = comment.author.login
-                info['comment author email'] = comment.author.email
-
-                logger.log_to_csv(csv_name, FIELDNAMES, info)
-                logger.log_to_stdout(info)
-        else:
-            logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
-            logger.log_to_stdout(info_tmp)
-
+        log_issue_and_comments(csv_name, issue_data, comments)
         sleep(TIMEDELTA)
 
 
-def log_issues(
-    client: IRepositoryAPI, working_repo, csv_name, token, start, finish, fork_flag
-):
-    logger.log_to_csv(csv_name, FIELDNAMES)
+def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
+    if comments:
+        for comment in comments:
+            comment_data = IssueDataWithComment(
+                **issue_data,
+                body=comment.body,
+                created_at=str(comment.created_at),
+                author_name=comment.author.username,
+                author_login=comment.author.login,
+                author_email=comment.author.email,
+            )
+            comment_data = asdict(comment_data)
 
-    for repo, token in working_repo:
+            logger.log_to_csv(csv_name, list(comment_data.keys()), comment_data)
+            logger.log_to_stdout(comment_data)
+    else:
+        info = asdict(issue_data)
+        logger.log_to_csv(csv_name, list(info.keys()), info)
+        logger.log_to_stdout(info)
+
+
+def log_issues(
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    fork_flag: bool,
+):
+    info = asdict(IssueDataWithComment())
+    logger.log_to_csv(csv_name, list(info.keys()))
+
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repository_issues(client, repo, csv_name, token, start, finish)

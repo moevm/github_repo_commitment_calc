@@ -1,7 +1,7 @@
-from interface_wrapper import RepositoryFactory, IRepositoryAPI
 from time import sleep
 
-TIMEDELTA = 0.05
+from constants import TIMEDELTA
+from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 def login(source, token, base_url):
     client = RepositoryFactory.create_api(source, token, base_url)
@@ -20,7 +20,6 @@ def get_repos_from_file(repos_path: str) -> list[str]:
         list_repos = [x for x in file.read().split('\n') if x]
 
     return list_repos
-
 
 class Clients:
     def __init__(self, source: str, tokens: list[str], base_url: str | None = None):

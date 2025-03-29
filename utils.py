@@ -2,9 +2,7 @@ import csv
 from datetime import datetime
 import pytz
 
-TITLE_LEN = 80
-MIN_SIDE_PADDING = 4
-SIDE_WHITE_SPACES = 1
+from constants import MIN_SIDE_PADDING, SIDE_WHITE_SPACES, TITLE_LEN, TIMEZONE
 
 class logger:
     #TODO: отключение вывода в stdout
@@ -47,8 +45,6 @@ class logger:
     @staticmethod
     def log_warning(warning: str):
         pass
-
-TIMEZONE = 'Europe/Moscow'
 
 def parse_time(datetime_str) -> datetime:
     start = (

@@ -1,41 +1,48 @@
-from utils import logger
+import json
+from dataclasses import asdict, dataclass
+from time import sleep
+from typing import Generator
+from datetime import datetime
+
 import pytz
 import requests
-import json
-from time import sleep
+
+from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from git_logger import get_assignee_story
 from interface_wrapper import IRepositoryAPI, Repository
+from utils import logger
 
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = (
-    'repository name',
-    'title',
-    'id',
-    'state',
-    'commit into',
-    'commit from',
-    'created at',
-    'creator name',
-    'creator login',
-    'creator email',
-    'changed files',
-    'comment body',
-    'comment created at',
-    'comment author name',
-    'comment author login',
-    'comment author email',
-    'merger name',
-    'merger login',
-    'merger email',
-    'source branch',
-    'target branch',
-    'assignee story',
-    'related issues',
-    'labels',
-    'milestone',
-)
+@dataclass(kw_only=True, frozen=True)
+class PullRequestData:
+    repository_name: str = ''
+    title: str = ''
+    id: int = 0
+    state: str = ''
+    commit_into: str = ''
+    commit_from: str = ''
+    created_at: str = ''
+    creator_name: str = ''
+    creator_login: str = ''
+    creator_email: str = ''
+    changed_files: str = ''
+    merger_name: str | None = None
+    merger_login: str | None = None
+    merger_email: str | None = None
+    source_branch: str = ''
+    target_branch: str = ''
+    assignee_story: str = ''
+    related_issues: str = ''
+    labels: str = ''
+    milestone: str = ''
+
+
+@dataclass(kw_only=True, frozen=True)
+class PullRequestDataWithComment(PullRequestData):
+    body: str = ''
+    created_at: str = ''
+    author_name: str = ''
+    author_login: str = ''
+    author_email: str = ''
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -94,6 +101,14 @@ def get_related_issues(pull_request_number, repo_owner, repo_name, token):
     return ';'.join(list_issues_url)
 
 
+def nvl(val):
+    return val or EMPTY_FIELD
+
+
+def get_info(obj, attr):
+    return EMPTY_FIELD if obj is None else getattr(obj, attr)
+
+
 def log_repositories_pr(
     client: IRepositoryAPI,
     repository: Repository,
@@ -117,75 +132,73 @@ def log_repositories_pr(
         ):
             continue
 
-        info_tmp = {
-            'repository name': repository.name,
-            'title': pull.title,
-            'id': pull._id,
-            'state': pull.state,
-            'commit into': pull.base_label,
-            'commit from': pull.head_label,
-            'created at': pull.created_at,
-            'creator name': nvl(pull.author.username),
-            'creator login': pull.author.login,
-            'creator email': pull.author.email,
-            'changed files': '; '.join([file for file in pull.files]),
-            'comment body': EMPTY_FIELD,
-            'comment created at': EMPTY_FIELD,
-            'comment author name': EMPTY_FIELD,
-            'comment author login': EMPTY_FIELD,
-            'comment author email': EMPTY_FIELD,
-            'merger name': pull.merged_by.username if pull.merged_by else None,
-            'merger login': pull.merged_by.login if pull.merged_by else None,
-            'merger email': pull.merged_by.email if pull.merged_by else None,
-            'source branch': pull.head_ref,
-            'target branch': pull.base_ref,
-            'assignee story': get_assignee_story(pull),
-            'related issues': (
-                EMPTY_FIELD
-                if pull.issue_url is None
-                else get_related_issues(
-                    pull._id, repository.owner, repository.name, token
-                )
+        pr_data = PullRequestData(
+            repository_name=repository.name,
+            title=pull.title,
+            id=pull._id,
+            state=pull.state,
+            commit_into=pull.base_label,
+            commit_from=pull.head_label,
+            created_at=str(pull.created_at),
+            creator_name=nvl(pull.author.username),
+            creator_login=pull.author.login,
+            creator_email=pull.author.email,
+            changed_files='; '.join(pull.files),
+            merger_name=pull.merged_by.username if pull.merged_by else None,
+            merger_login=pull.merged_by.login if pull.merged_by else None,
+            merger_email=pull.merged_by.email if pull.merged_by else None,
+            source_branch=pull.head_ref,
+            target_branch=pull.base_ref,
+            assignee_story=get_assignee_story(pull),
+            related_issues=(
+                get_related_issues(pull._id, repository.owner, repository.name, token)
+                if pull.issue_url is not None
+                else EMPTY_FIELD
             ),
-            'labels': (
-                EMPTY_FIELD
-                if pull.labels is None
-                else ';'.join([label for label in pull.labels])
-            ),
-            'milestone': get_info(pull.milestone, 'title'),
-        }
+            labels=';'.join(pull.labels) if pull.labels else EMPTY_FIELD,
+            milestone=get_info(pull.milestone, 'title'),
+        )
 
         if log_comments:
             comments = client.get_comments(repository, pull)
-            if len(comments) > 0:
+            if comments:
                 for comment in comments:
-                    info = info_tmp
-                    info['comment body'] = comment.body
-                    info['comment created at'] = comment.created_at
-                    info['comment author name'] = comment.author.name
-                    info['comment author login'] = comment.author.login
-                    info['comment author email'] = nvl(comment.author.email)
+                    comment_data = PullRequestDataWithComment(
+                        **pr_data,
+                        body=comment.body,
+                        created_at=str(comment.created_at),
+                        author_name=comment.author.name,
+                        author_login=comment.author.login,
+                        author_email=nvl(comment.author.email),
+                    )
+                    comment_data = asdict(comment_data)
 
-                    logger.log_to_csv(csv_name, FIELDNAMES, info)
-                    logger.log_to_stdout(info)
+                    logger.log_to_csv(csv_name, list(comment_data.keys()), comment_data)
+                    logger.log_to_stdout(comment_data)
+            else:
+                base_pr_info = asdict(pr_data)
+                logger.log_to_csv(csv_name, list(base_pr_info.keys()), base_pr_info)
+                logger.log_to_stdout(base_pr_info)
         else:
-            logger.log_to_csv(csv_name, FIELDNAMES, info_tmp)
-            logger.log_to_stdout(info_tmp)
+            base_pr_info = asdict(pr_data)
+            logger.log_to_csv(csv_name, list(base_pr_info.keys()), base_pr_info)
+            logger.log_to_stdout(base_pr_info)
+
         sleep(TIMEDELTA)
 
 
 def log_pull_requests(
-    client: IRepositoryAPI,
-    working_repos,
-    csv_name,
-    start,
-    finish,
-    fork_flag,
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    fork_flag: bool,
     log_comments=False,
 ):
-    logger.log_to_csv(csv_name, FIELDNAMES)
+    info = asdict(PullRequestDataWithComment())
+    logger.log_to_csv(csv_name, list(info.keys()))
 
-    for repo, token in working_repos:
+    for client, repo, token in binded_repos:
         try:
             logger.log_title(repo.name)
             log_repositories_pr(

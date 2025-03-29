@@ -51,3 +51,23 @@ jobs:
 
     - name: Show out.csv
       run: cat out.csv
+
+token-usage-unit_test:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run test
+      run: python3 test_token_usage.py --tt1 ${{ secrets.TEST_TOKEN_GITHUB }} -tt2 ${{ secrets.SECOND_TEST_TOKEN_GITHUB }} --repo moevm/github_repo_commitment_calc --out out.csv

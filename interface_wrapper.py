@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-from datetime import datetime
-from dataclasses import dataclass
 import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime
 
 from github import Github, Auth
 from pyforgejo import PyforgejoApi
@@ -178,8 +178,8 @@ class RepositoryFactory:
     def create_api(
         source: str, token: str, base_url: str | None = None
     ) -> IRepositoryAPI:
-        from GitHubRepoAPI import GitHubRepoAPI
         from ForgejoRepoAPI import ForgejoRepoAPI
+        from GitHubRepoAPI import GitHubRepoAPI
 
         if source == 'github':
             return GitHubRepoAPI(Github(auth=Auth.Token(token)))
