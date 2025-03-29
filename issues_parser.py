@@ -131,12 +131,13 @@ def log_repository_issues(
     def get_info(obj, attr):
         return EMPTY_FIELD if obj is None else getattr(obj, attr)
 
-    timezone = pytz.timezone(TIMEZONE)
     issues = client.get_issues(repository)
 
     for issue in issues:
-        created_at = issue.created_at.astimezone(timezone)
-        if not (start <= created_at <= finish):
+        if (
+            issue.created_at.astimezone(pytz.timezone(TIMEZONE)) < start
+            or issue.created_at.astimezone(pytz.timezone(TIMEZONE)) > finish
+        ):
             continue
 
         issue_data = IssueData(
