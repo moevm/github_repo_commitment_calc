@@ -1,4 +1,3 @@
-import csv
 import os
 import time
 
@@ -7,6 +6,7 @@ from git import Repo, exc
 from constants import WIKI_FIELDNAMES
 
 from utils import logger
+
 
 def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):
     logger.log_to_csv(csv_name, WIKI_FIELDNAMES)
@@ -87,7 +87,7 @@ def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):
 
             for fieldname in data_commit:
                 print(fieldname, data_commit[fieldname], sep=': ')
-            
+
             logger.log_sep()
             logger.log_to_csv(csv_name, data_commit)
 

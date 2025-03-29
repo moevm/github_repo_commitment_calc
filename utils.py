@@ -4,8 +4,9 @@ import pytz
 
 from constants import MIN_SIDE_PADDING, SIDE_WHITE_SPACES, TITLE_LEN, TIMEZONE
 
+
 class logger:
-    #TODO: отключение вывода в stdout
+    # TODO: отключение вывода в stdout
     @staticmethod
     def log_title(title: str, title_len: int = TITLE_LEN):
         final_len = max(
@@ -45,6 +46,7 @@ class logger:
     @staticmethod
     def log_warning(warning: str):
         pass
+
 
 def parse_time(datetime_str) -> datetime:
     start = (

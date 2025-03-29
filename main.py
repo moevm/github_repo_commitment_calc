@@ -12,6 +12,7 @@ import wikipars
 
 from utils import parse_time
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--invites", help="print pending invites", action="store_true")
@@ -115,6 +116,7 @@ def parse_args():
                 action.required = True
     return parser.parse_args()
 
+
 def run(args, binded_repos, repos_for_wiki=None):
     start = parse_time(args.start.split('-'))
     finish = parse_time(args.finish.split('-'))
@@ -150,6 +152,7 @@ def run(args, binded_repos, repos_for_wiki=None):
             args.out, args.google_token, args.table_id, args.sheet_id
         )
 
+
 def main():
     args = parse_args()
 
@@ -170,6 +173,7 @@ def main():
         print(traceback.print_exc())
     else:
         run(args, binded_repos)
+
 
 if __name__ == '__main__':
     main()

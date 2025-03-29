@@ -6,6 +6,7 @@ from main import run
 
 import git_logger
 
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--tt1', type=str, required=True, help='first test token')
@@ -22,6 +23,7 @@ def parse_args(args):
     parser.add_argument('-o', '--out', type=str, required=True, help='output filename')
 
     return parser.parse_args(args)
+
 
 class TestTokenUsage(unittest.TestCase):
     def setUp(self):
@@ -53,16 +55,17 @@ class TestTokenUsage(unittest.TestCase):
 
     @staticmethod
     def _is_only_one_token_used(limit_start, limit_finish):
-        return (bool(limit_start[0] - limit_finish[0])
-            != bool(limit_start[1] - limit_finish[1]))
-    
+        return bool(limit_start[0] - limit_finish[0]) != bool(
+            limit_start[1] - limit_finish[1]
+        )
+
     @staticmethod
     def _is_max_token_used(limit_start, limit_finish):
         if limit_start[0] - limit_finish[0]:
             return limit_start[0] == max(limit_start)
         else:
             return limit_start[1] == max(limit_start)
-    
+
     @staticmethod
     def _change_tokens_order(tokens, key):
         key %= len(tokens)
@@ -80,7 +83,9 @@ class TestTokenUsage(unittest.TestCase):
     def test_commits_parser(self):
         self.args.commits = True
         for i in range(2):
-            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            clients = git_logger.Clients(
+                "github", self._change_tokens_order(self.tokens, i)
+            )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
             limit_start, limit_finish = self._get_usage(binded_repos, clients)
@@ -91,7 +96,9 @@ class TestTokenUsage(unittest.TestCase):
     def test_contributors_parser(self):
         self.args.contributors = True
         for i in range(2):
-            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            clients = git_logger.Clients(
+                "github", self._change_tokens_order(self.tokens, i)
+            )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
             limit_start, limit_finish = self._get_usage(binded_repos, clients)
@@ -102,7 +109,9 @@ class TestTokenUsage(unittest.TestCase):
     def test_issues_parser(self):
         self.args.issues = True
         for i in range(2):
-            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            clients = git_logger.Clients(
+                "github", self._change_tokens_order(self.tokens, i)
+            )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
             limit_start, limit_finish = self._get_usage(binded_repos, clients)
@@ -113,7 +122,9 @@ class TestTokenUsage(unittest.TestCase):
     def test_invites_parser(self):
         self.args.invites = True
         for i in range(2):
-            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            clients = git_logger.Clients(
+                "github", self._change_tokens_order(self.tokens, i)
+            )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
             limit_start, limit_finish = self._get_usage(binded_repos, clients)
@@ -124,13 +135,16 @@ class TestTokenUsage(unittest.TestCase):
     def test_pull_requests_parser(self):
         self.args.pull_requests = True
         for i in range(2):
-            clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
+            clients = git_logger.Clients(
+                "github", self._change_tokens_order(self.tokens, i)
+            )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
             limit_start, limit_finish = self._get_usage(binded_repos, clients)
 
             self.assertTrue(self._is_only_one_token_used(limit_start, limit_finish))
             self.assertTrue(self._is_max_token_used(limit_start, limit_finish))
+
 
 if __name__ == '__main__':
     unittest.main(argv=[sys.argv[0]])

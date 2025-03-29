@@ -12,6 +12,7 @@ from git_logger import get_assignee_story
 from interface_wrapper import IRepositoryAPI, Repository
 from utils import logger
 
+
 @dataclass(kw_only=True, frozen=True)
 class PullRequestData:
     repository_name: str = ''

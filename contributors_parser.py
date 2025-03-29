@@ -1,7 +1,6 @@
 from dataclasses import asdict, dataclass
 from time import sleep
 from typing import Generator
-from datetime import datetime
 
 from constants import EMPTY_FIELD, TIMEDELTA
 from interface_wrapper import IRepositoryAPI, Repository
