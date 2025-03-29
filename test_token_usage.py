@@ -27,7 +27,6 @@ def parse_args(args):
 
 class TestTokenUsage(unittest.TestCase):
     def setUp(self):
-        print(len(sys.argv[1:]))
         test_args = parse_args(sys.argv[1:])
         self.tokens = [test_args.tt1, test_args.tt2]
         self.repo = test_args.repo
