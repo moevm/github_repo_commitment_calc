@@ -12,6 +12,7 @@ import invites_parser
 import issues_parser
 import pull_requests_parser
 import wikipars
+from constants import TIMEZONE
 from interface_wrapper import RepositoryFactory
 
 
@@ -134,7 +135,7 @@ def parse_time(datetime_str):
         minute=start[4],
         second=start[5],
     )
-    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))
+    return start_datetime.astimezone(pytz.timezone(TIMEZONE))
 
 
 def main():
