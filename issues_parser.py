@@ -165,13 +165,14 @@ def log_repository_issues(
         )
 
         comments = client.get_comments(repository, issue)
+        log_issue_and_comments(csv_name, issue_data, comments)
         sleep(TIMEDELTA)
 
 
 def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
     if comments:
         for comment in comments:
-            comment_data = CommentData(
+            comment_data = IssueDataWithComment(
                 **issue_data,
                 body=comment.body,
                 created_at=str(comment.created_at),
@@ -179,8 +180,9 @@ def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
                 author_login=comment.author.login,
                 author_email=comment.author.email,
             )
+            comment_data = asdict(comment_data)
 
-            logger.log_to_csv(csv_name, list(commit_data.keys()), comment_data)
+            logger.log_to_csv(csv_name, list(comment_data.keys()), comment_data)
             logger.log_to_stdout(comment_data)
     else:
         info = asdict(issue_data)
