@@ -79,7 +79,6 @@ class TestTokenUsage(unittest.TestCase):
 
     def test_commits_parser(self):
         self.args.commits = True
-        self.assertTrue(False)
         for i in range(2):
             clients = git_logger.Clients("github", self._change_tokens_order(self.tokens, i))
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
