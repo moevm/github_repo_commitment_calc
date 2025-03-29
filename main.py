@@ -146,7 +146,7 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.contributors:
         contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
     if args.wikis:
-        wikipars.wiki_parser(repos_for_wiki, args.download_repos, args.out)
+        wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:
         export_sheets.write_data_to_table(
             args.out, args.google_token, args.table_id, args.sheet_id
