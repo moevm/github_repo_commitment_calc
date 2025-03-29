@@ -213,3 +213,4 @@ def log_issues(
             sleep(TIMEDELTA)
         except Exception as e:
             print("log_issues exception:", e)
+            exit(1)

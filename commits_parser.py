@@ -88,3 +88,4 @@ def log_commits(
             sleep(TIMEDELTA)
         except Exception as e:
             print(e)
+            exit(1)
