@@ -172,7 +172,7 @@ def main():
         print(e)
         print(traceback.print_exc())
     else:
-        run(args, binded_repos)
+        run(args, binded_repos, repositories)
 
 
 if __name__ == '__main__':

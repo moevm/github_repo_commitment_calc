@@ -11,13 +11,10 @@ from utils import logger
 def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):
     logger.log_to_csv(csv_name, WIKI_FIELDNAMES)
 
-    # Создаем список репозиториев из файла
-    with open(repositories, 'r') as file:
-        list_repos = [x for x in file.read().split('\n') if x]
     error_repos = []
 
     data_changes = []
-    for name_rep in list_repos:
+    for name_rep in repositories:
         # Проверяем, есть ли репозиторий в папке
         dir_path = path_drepo + "/" + name_rep
         if os.path.exists(dir_path):
