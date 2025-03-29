@@ -1,8 +1,8 @@
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from time import sleep
 from typing import Generator
-from datetime import datetime
 
 import pytz
 import requests
@@ -165,7 +165,7 @@ def log_repositories_pr(
             if comments:
                 for comment in comments:
                     comment_data = PullRequestDataWithComment(
-                        **pr_data,
+                        **asdict(pr_data),
                         body=comment.body,
                         created_at=str(comment.created_at),
                         author_name=comment.author.name,

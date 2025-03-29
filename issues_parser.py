@@ -1,8 +1,8 @@
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from time import sleep
 from typing import Generator
-from datetime import datetime
 
 import pytz
 import requests
@@ -171,7 +171,7 @@ def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
     if comments:
         for comment in comments:
             comment_data = IssueDataWithComment(
-                **issue_data,
+                **asdict(issue_data),
                 body=comment.body,
                 created_at=str(comment.created_at),
                 author_name=comment.author.username,

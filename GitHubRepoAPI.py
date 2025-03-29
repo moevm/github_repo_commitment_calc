@@ -1,19 +1,8 @@
-from interface_wrapper import (
-    Branch,
-    Comment,
-    Commit,
-    Contributor,
-    Invite,
-    IRepositoryAPI,
-    Issue,
-    PullRequest,
-    Repository,
-    User,
-    WikiPage,
-    logging,
-)
-
 from github import Github, GithubException
+
+from interface_wrapper import (Branch, Comment, Commit, Contributor, Invite,
+                               IRepositoryAPI, Issue, PullRequest, Repository,
+                               User, WikiPage, logging)
 
 
 class GitHubRepoAPI(IRepositoryAPI):

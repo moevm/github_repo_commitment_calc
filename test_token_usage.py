@@ -1,10 +1,9 @@
-import unittest
 import argparse
 import sys
-
-from main import run
+import unittest
 
 import git_logger
+from main import run
 
 
 def parse_args(args):
