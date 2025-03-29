@@ -39,11 +39,11 @@ class PullRequestData:
 
 @dataclass(kw_only=True, frozen=True)
 class PullRequestDataWithComment(PullRequestData):
-    body: str = ''
-    created_at: str = ''
-    author_name: str = ''
-    author_login: str = ''
-    author_email: str = ''
+    comment_body: str = ''
+    comment_created_at: str = ''
+    comment_author_name: str = ''
+    comment_author_login: str = ''
+    comment_author_email: str = ''
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -166,11 +166,11 @@ def log_repositories_pr(
                 for comment in comments:
                     comment_data = PullRequestDataWithComment(
                         **asdict(pr_data),
-                        body=comment.body,
-                        created_at=str(comment.created_at),
-                        author_name=comment.author.name,
-                        author_login=comment.author.login,
-                        author_email=nvl(comment.author.email),
+                        comment_body=comment.body,
+                        comment_created_at=str(comment.created_at),
+                        comment_author_name=comment.author.name,
+                        comment_author_login=comment.author.login,
+                        comment_author_email=nvl(comment.author.email),
                     )
                     comment_data = asdict(comment_data)
 

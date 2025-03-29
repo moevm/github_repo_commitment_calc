@@ -36,11 +36,11 @@ class IssueData:
 
 @dataclass(kw_only=True, frozen=True)
 class IssueDataWithComment(IssueData):
-    body: str = ''
-    created_at: str = ''
-    author_name: str = ''
-    author_login: str = ''
-    author_email: str = ''
+    comment_body: str = ''
+    comment_created_at: str = ''
+    comment_author_name: str = ''
+    comment_author_login: str = ''
+    comment_author_email: str = ''
 
 
 def get_connected_pulls(issue_number, repo_owner, repo_name, token):
@@ -172,11 +172,11 @@ def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
         for comment in comments:
             comment_data = IssueDataWithComment(
                 **asdict(issue_data),
-                body=comment.body,
-                created_at=str(comment.created_at),
-                author_name=comment.author.username,
-                author_login=comment.author.login,
-                author_email=comment.author.email,
+                comment_body=comment.body,
+                comment_created_at=str(comment.created_at),
+                comment_author_name=comment.author.username,
+                comment_author_login=comment.author.login,
+                comment_author_email=comment.author.email,
             )
             comment_data = asdict(comment_data)
 
