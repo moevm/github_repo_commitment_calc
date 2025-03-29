@@ -1,8 +1,7 @@
-from interface_wrapper import RepositoryFactory, IRepositoryAPI
 from time import sleep
 
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
+from constants import TIMEDELTA, TIMEZONE
+from interface_wrapper import IRepositoryAPI, RepositoryFactory
 
 
 def login(source, token, base_url):

@@ -1,18 +1,14 @@
-from dataclasses import dataclass, asdict
+import json
+from dataclasses import asdict, dataclass
 from time import sleep
-from typing import Optional
 
 import pytz
 import requests
-import json
 
-from utils import logger
+from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from git_logger import get_assignee_story
 from interface_wrapper import IRepositoryAPI, Repository
-
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
+from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -26,10 +22,10 @@ class IssueData:
     creator_name: str = ''
     creator_login: str = ''
     creator_email: str = ''
-    closed_at: Optional[str] = None
-    closer_name: Optional[str] = None
-    closer_login: Optional[str] = None
-    closer_email: Optional[str] = None
+    closed_at: str | None = None
+    closer_name: str | None = None
+    closer_login: str | None = None
+    closer_email: str | None = None
     assignee_story: str = ''
     connected_pull_requests: str = ''
     labels: str = ''

@@ -1,17 +1,14 @@
-from dataclasses import dataclass, asdict
+import json
+from dataclasses import asdict, dataclass
 from time import sleep
 
 import pytz
 import requests
-import json
 
+from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from git_logger import get_assignee_story
 from interface_wrapper import IRepositoryAPI, Repository
 from utils import logger
-
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
 
 
 @dataclass(kw_only=True, frozen=True)

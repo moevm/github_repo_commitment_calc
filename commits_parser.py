@@ -1,15 +1,11 @@
-from dataclasses import dataclass, asdict
-import pytz
+from dataclasses import asdict, dataclass
 from time import sleep
 
-from utils import logger
+import pytz
+
+from constants import EMPTY_FIELD, GOOGLE_MAX_CELL_LEN, TIMEDELTA, TIMEZONE
 from interface_wrapper import IRepositoryAPI, Repository
-
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-
-GOOGLE_MAX_CELL_LEN = 50000
+from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)

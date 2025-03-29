@@ -1,13 +1,10 @@
-from dataclasses import dataclass, asdict
-from typing import Generator
+from dataclasses import asdict, dataclass
 from time import sleep
+from typing import Generator
 
-from utils import logger
+from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from interface_wrapper import IRepositoryAPI, Repository
-
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
+from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)

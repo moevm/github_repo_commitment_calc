@@ -1,21 +1,12 @@
-from interface_wrapper import (
-    logging,
-    IRepositoryAPI,
-    Repository,
-    Commit,
-    Branch,
-    User,
-    Contributor,
-    Issue,
-    PullRequest,
-    WikiPage,
-    Comment,
-    Invite,
-)
 import base64
 import sys
-from pyforgejo import PyforgejoApi
+
 import isodate
+from pyforgejo import PyforgejoApi
+
+from interface_wrapper import (Branch, Comment, Commit, Contributor, Invite,
+                               IRepositoryAPI, Issue, PullRequest, Repository,
+                               User, WikiPage, logging)
 
 
 class ForgejoRepoAPI(IRepositoryAPI):

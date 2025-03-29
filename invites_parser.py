@@ -1,10 +1,9 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from time import sleep
-from utils import logger
+
+from constants import TIMEDELTA
 from interface_wrapper import IRepositoryAPI, Repository
-
-
-TIMEDELTA = 0.05
+from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)
