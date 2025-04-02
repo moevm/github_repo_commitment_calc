@@ -22,4 +22,4 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run test
-      run: python3 test_token_usage.py --tt1 ${{ secrets.TEST_TOKEN_GITHUB }} --tt2 ${{ secrets.SECOND_TEST_TOKEN_GITHUB }} --repo thehighestmath/SummerPractice --out out.csv
+      run: python3 test_token_usage.py --tt1 ${{ secrets.TEST_TOKEN_GITHUB }} --tt2 ${{ secrets.SECOND_TEST_TOKEN_GITHUB }} --repo moevm/github_repo_commitment_calc --out out.csv
