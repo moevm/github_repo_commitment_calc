@@ -90,6 +90,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
                     files=(
                         [f.filename for f in getattr(c, "files", [])] if files else None
                     ),
+                    additions=None, # TODO
+                    deletions=None,
                 )
                 for c in commits
             ]

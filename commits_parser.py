@@ -19,6 +19,8 @@ class CommitData:
     changed_files: str = ''
     commit_id: str = ''
     branch: str = ''
+    additions: str = ''
+    deletions: str = ''
 
 
 def log_repository_commits(
@@ -54,6 +56,8 @@ def log_repository_commits(
                 changed_files=changed_files,
                 commit_id=commit._id,
                 branch=branch,
+                additions=commit.additions,
+                deletions=commit.deletions,
             )
             info = asdict(commit_data)
 

@@ -73,6 +73,8 @@ class GitHubRepoAPI(IRepositoryAPI):
                     author=self.get_user_data(c.author),
                     date=c.commit.author.date,
                     files=[f.filename for f in c.files] if files else None,
+                    additions=c.stats.additions,
+                    deletions=c.stats.deletions,
                 )
                 for c in commits
             ]
