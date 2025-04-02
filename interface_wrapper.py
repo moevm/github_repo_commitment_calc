@@ -39,6 +39,8 @@ class Commit:
     author: User
     date: datetime
     files: list[str]
+    additions: int
+    deletions: int
 
 
 @dataclass
