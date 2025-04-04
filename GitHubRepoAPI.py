@@ -79,6 +79,7 @@ class GitHubRepoAPI(IRepositoryAPI):
         try:
             commits = self.client.get_repo(repo._id).get_commits()
             return [self.get_commit_data(c, files) for c in commits]
+
         except Exception as e:
             logging.error(
                 f"Failed to get commits from GitHub for repo {repo.name}: {e}"
