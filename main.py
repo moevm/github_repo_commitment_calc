@@ -9,6 +9,7 @@ import invites_parser
 import issues_parser
 import pull_requests_parser
 import wikipars
+import workflow_runs_parser
 from utils import parse_time
 
 
@@ -22,6 +23,9 @@ def parse_args():
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
     parser.add_argument("--contributors", help="log contributors", action="store_true")
+    parser.add_argument(
+        "--workflow_runs", help="log workflow runs", action="store_true"
+    )
     parser.add_argument(
         "--forks_include", help="logging data from forks", action="store_true"
     )
@@ -144,6 +148,10 @@ def run(args, binded_repos, repos_for_wiki=None):
         )
     if args.contributors:
         contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
+    if args.workflow_runs:
+        workflow_runs_parser.log_workflow_runs(
+            binded_repos, args.out, args.forks_include
+        )
     if args.wikis:
         wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:

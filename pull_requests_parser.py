@@ -208,7 +208,7 @@ def log_pull_requests(
             if fork_flag:
                 forked_repos = client.get_repo(repo._id).get_forks()
                 for forked_repo in forked_repos:
-                    logger.log_title("FORKED:", forked_repo.full_name)
+                    logger.log_title(f"FORKED: {forked_repo.name}")
                     log_repositories_pr(
                         client,
                         forked_repo,

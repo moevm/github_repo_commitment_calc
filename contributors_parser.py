@@ -94,7 +94,7 @@ def log_contributors(
 
             if fork_flag:
                 for forked_repo in client.get_forks(repo):
-                    logger.log_title("FORKED:", forked_repo.name)
+                    logger.log_title(f"FORKED: {forked_repo.name}")
                     log_repository_contributors(client, forked_repo, csv_name)
                     sleep(TIMEDELTA)
 
