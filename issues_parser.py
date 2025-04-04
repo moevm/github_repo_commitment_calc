@@ -205,7 +205,7 @@ def log_issues(
             if fork_flag:
                 forked_repos = client.get_forks(repo)
                 for forked_repo in forked_repos:
-                    logger.log_title("FORKED:", forked_repo.name)
+                    logger.log_title(f"FORKED: {forked_repo.name}")
                     log_repository_issues(
                         client, forked_repo, csv_name, token, start, finish
                     )

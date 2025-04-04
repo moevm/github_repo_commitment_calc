@@ -40,6 +40,7 @@ class TestTokenUsage(ParametrizedTestCase):
             wikis=False,
             contributors=False,
             invites=False,
+            workflow_runs=False,
             start="2000/01/01-00:00:00",
             finish="2400/01/01-00:00:00",
             branch="default",
@@ -88,6 +89,7 @@ class TestTokenUsage(ParametrizedTestCase):
             param({'issues': True}, id='issues'),
             param({'invites': True}, id='invites'),
             param({'pull_requests': True}, id='pull_requests'),
+            param({'workflow_runs': True}, id='workflow_runs'),
         ],
     )
     def test_commits_parser(self, args: dict[str, bool]):

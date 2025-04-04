@@ -13,6 +13,7 @@ from interface_wrapper import (
     User,
     WikiPage,
     logging,
+    WorkflowRun,
 )
 
 
@@ -37,13 +38,24 @@ class GitHubRepoAPI(IRepositoryAPI):
         return User(
             login=user.login,
             username=user.name,
-            email=user.email,
+            email=user.email,  # always None
             html_url=user.html_url,
             node_id=user.node_id,
             type=user.type,
             bio=user.bio,
             site_admin=user.site_admin,
             _id=user.id,
+        )
+
+    def get_commit_data(self, commit, files=False) -> Commit:
+        return Commit(
+            _id=commit.sha,
+            message=commit.commit.message,
+            author=self.get_user_data(commit.author),
+            date=commit.commit.author.date,
+            files=[f.filename for f in commit.files] if files else None,
+            additions=commit.stats.additions,
+            deletions=commit.stats.deletions,
         )
 
     def get_repository(self, id: str) -> Repository | None:
@@ -66,18 +78,7 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_commits(self, repo: Repository, files: bool = True) -> list[Commit]:
         try:
             commits = self.client.get_repo(repo._id).get_commits()
-            return [
-                Commit(
-                    _id=c.sha,
-                    message=c.commit.message,
-                    author=self.get_user_data(c.author),
-                    date=c.commit.author.date,
-                    files=[f.filename for f in c.files] if files else None,
-                    additions=c.stats.additions,
-                    deletions=c.stats.deletions,
-                )
-                for c in commits
-            ]
+            return [self.get_commit_data(c, files) for c in commits]
         except Exception as e:
             logging.error(
                 f"Failed to get commits from GitHub for repo {repo.name}: {e}"
@@ -153,18 +154,7 @@ class GitHubRepoAPI(IRepositoryAPI):
             for branch in branches:
                 commit = repo_client.get_commit(branch.commit.sha)
 
-                author = commit.author
-                contributor = Contributor(
-                    username=author.login if author else "unknown",
-                    email=commit.commit.author.email or "",
-                )
-
-                commit_obj = Commit(
-                    _id=commit.sha,
-                    message=commit.commit.message,
-                    author=contributor,
-                    date=commit.commit.author.date,
-                )
+                commit_obj = self.get_commit_data(commit)
 
                 result.append(Branch(name=branch.name, last_commit=commit_obj))
 
@@ -182,10 +172,21 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_forks(self, repo: Repository) -> list[Repository]:
         repo_client = self.client.get_repo(repo._id)
         result = []
+
         for r in repo_client.get_forks():
+            default_branch = (Branch(name=r.default_branch, last_commit=None),)
+            owner = (self.get_user_data(r.owner),)
+
             result.append(
-                Repository(_id=repo.full_name, name=repo.name, url=repo.html_url)
+                Repository(
+                    _id=r.full_name,
+                    name=r.name,
+                    url=r.html_url,
+                    default_branch=default_branch,
+                    owner=owner,
+                )
             )
+
         return result
 
     def get_comments(self, repo, obj) -> list[Comment]:
@@ -245,6 +246,34 @@ class GitHubRepoAPI(IRepositoryAPI):
 
     def get_rate_limiting(self) -> tuple[int, int]:
         return self.client.rate_limiting
+
+    def get_workflow_runs(self, repo) -> list[WorkflowRun]:
+        try:
+            runs = self.client.get_repo(repo._id).get_workflow_runs()
+
+            return [
+                WorkflowRun(
+                    display_title=r.display_title,
+                    event=r.event,
+                    head_branch=r.head_branch,
+                    head_sha=r.head_sha,
+                    name=r.name,
+                    path=r.path,
+                    created_at=r.created_at,
+                    run_started_at=r.run_started_at,
+                    updated_at=r.updated_at,
+                    conclusion=r.conclusion,
+                    status=r.status,
+                    url=r.url,
+                )
+                for r in runs
+            ]
+
+        except Exception as e:
+            logging.error(
+                f"Failed to get workflow runs from GitHub for repo {repo.name}: {e}"
+            )
+            return []
 
 
 # Точка входа для тестирования

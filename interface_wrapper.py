@@ -111,6 +111,22 @@ class WikiPage:
     content: str
 
 
+@dataclass
+class WorkflowRun:
+    display_title: str
+    event: str
+    head_branch: str
+    head_sha: str
+    name: str
+    path: str
+    created_at: datetime
+    run_started_at: datetime
+    updated_at: datetime
+    conclusion: str
+    status: str
+    url: str
+
+
 # Интерфейс API
 class IRepositoryAPI(ABC):
 
@@ -171,6 +187,10 @@ class IRepositoryAPI(ABC):
 
     @abstractmethod
     def get_rate_limiting(self) -> tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_workflow_runs(self, repo: Repository) -> list[WorkflowRun]:
         pass
 
 

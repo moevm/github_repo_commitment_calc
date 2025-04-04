@@ -84,7 +84,7 @@ def log_commits(
             log_repository_commits(client, repo, csv_name, start, finish, branch)
             if fork_flag:
                 for forked_repo in client.get_forks(repo):
-                    logger.log_title("FORKED:", forked_repo.full_name)
+                    logger.log_title(f"FORKED: {forked_repo.name}")
                     log_repository_commits(
                         client, forked_repo, csv_name, start, finish, branch
                     )
