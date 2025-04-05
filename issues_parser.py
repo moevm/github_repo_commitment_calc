@@ -159,7 +159,7 @@ def log_repository_issues(
                 else EMPTY_FIELD
             ),
             labels=';'.join(issue.labels) if issue.labels else EMPTY_FIELD,
-            milestone=get_info(issue.milestone, 'title'),
+            milestone=issue.milestone,
         )
 
         comments = client.get_comments(repository, issue)

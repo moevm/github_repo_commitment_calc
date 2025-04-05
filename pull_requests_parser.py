@@ -157,7 +157,7 @@ def log_repositories_pr(
                 else EMPTY_FIELD
             ),
             labels=';'.join(pull.labels) if pull.labels else EMPTY_FIELD,
-            milestone=get_info(pull.milestone, 'title'),
+            milestone=pull.milestone,
         )
 
         if log_comments:
