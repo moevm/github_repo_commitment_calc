@@ -15,6 +15,8 @@ class GitHubRepoAPI(IRepositoryAPI):
     
     def __init__(self, client):
         self.client = client
+        self._issue_cache = {}  
+        self._pull_cache = {}   
 
     def get_repository(self, id: str) -> Repository | None:
         try:
@@ -49,15 +51,24 @@ class GitHubRepoAPI(IRepositoryAPI):
 
     def get_issues(self, repo: Repository) -> list[Issue]:
         try:
-            issues = self.client.get_repo(repo._id).get_issues(state='all')
-            return [
-                Issue(
+            repo_obj = self.client.get_repo(repo._id)
+            issues = repo_obj.get_issues(state='all')
+
+            issue_dict = {}
+            result = []
+            for i in issues:
+                issue_obj = Issue(
                     _id=i.number,
                     title=i.title,
                     author=Contributor(i.user.login, i.user.email or ""),
                     state=i.state
-                ) for i in issues
-            ]
+                )
+                result.append(issue_obj)
+                issue_dict[i.number] = issue_obj
+
+            self._issue_cache[repo._id] = issue_dict
+            return result
+
         except Exception as e:
             logging.error(f"Failed to get issues from GitHub for repo {repo.name}: {e}")
             return []
@@ -65,50 +76,57 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         try:
             pulls = self.client.get_repo(repo._id).get_pulls(state='all')
-            return [
-                PullRequest(
+
+            pull_dict = {}
+            result = []
+            for p in pulls:
+                pr_obj = PullRequest(
                     _id=p.number,
                     title=p.title,
                     author=Contributor(p.user.login, p.user.email or ""),
                     state=p.state
-                ) for p in pulls
-            ]
+                )
+                result.append(pr_obj)
+                pull_dict[p.number] = pr_obj
+
+            self._pull_cache[repo._id] = pull_dict
+            return result
+
         except Exception as e:
             logging.error(f"Failed to get pull requests from GitHub for repo {repo.name}: {e}")
             return []
-        
+
     def get_branches(self, repo: Repository) -> list[Branch]:
         try:
             repo_client = self.client.get_repo(repo._id)
             branches = repo_client.get_branches()
             result = []
-        
+
             for branch in branches:
                 commit = repo_client.get_commit(branch.commit.sha)
-            
-                
+
                 author = commit.author
                 contributor = Contributor(
                     username=author.login if author else "unknown",
                     email=commit.commit.author.email or ""
                 )
-            
+
                 commit_obj = Commit(
                     _id=commit.sha,
                     message=commit.commit.message,
                     author=contributor,
                     date=commit.commit.author.date
                 )
-            
+
                 result.append(
                     Branch(
                         name=branch.name,
                         last_commit=commit_obj
                     )
                 )
-        
+
             return result
-    
+
         except Exception as e:
             logging.error(f"Failed to get branches from GitHub for repo {repo.name}: {e}")
             return []
@@ -124,7 +142,7 @@ if __name__ == "__main__":
     api = GitHubRepoAPI(client)
 
     # Укажите ваш репозиторий 
-    repo_name = ""
+    repo_name = "repo-name"
 
     # Получение репозитория
     repo = api.get_repository(repo_name)
@@ -138,7 +156,7 @@ if __name__ == "__main__":
     # Получение коммитов
     commits = api.get_commits(repo)
     print(f"Total commits: {len(commits)}")
-    for commit in commits[:10]:  # Выведем первые 10 коммитов
+    for commit in commits[:10]:
         print(f"Commit: {commit._id}, Message: {commit.message}, Author: {commit.author.username}")
 
     # Получение контрибьюторов
@@ -150,15 +168,14 @@ if __name__ == "__main__":
     # Получение issues
     issues = api.get_issues(repo)
     print(f"Total issues: {len(issues)}")
-    for issue in issues[:10]:  # Выведем первые 10 issues
+    for issue in issues[:10]:
         print(f"Issue: {issue._id}, Title: {issue.title}, State: {issue.state}")
 
     # Получение pull requests
     pulls = api.get_pull_requests(repo)
     print(f"Total pull requests: {len(pulls)}")
-    for pull in pulls[:10]:  # Выведем первые 10 pull requests
+    for pull in pulls[:10]:
         print(f"Pull Request: {pull._id}, Title: {pull.title}, State: {pull.state}")
-
 
     # Получение веток
     branches = api.get_branches(repo)
