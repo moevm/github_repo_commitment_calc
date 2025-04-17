@@ -191,9 +191,8 @@ class GitHubRepoAPI(IRepositoryAPI):
         return result
 
     def get_comments(self, repo, obj) -> list[Comment]:
-        result = []
         repo_client = self.client.get_repo(repo._id)
-    
+
         try:
             if isinstance(obj, Issue):
                 # Получаем issue напрямую по номеру
@@ -205,7 +204,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                 comments = pull.get_comments()
             else:
                 return []
-        
+
             # Формируем результат
             return [
                 Comment(
@@ -215,7 +214,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                 )
                 for comment in comments
             ]
-        
+
         except Exception as e:
             logging.error(f"Failed to get comments for {type(obj).__name__} {obj._id}: {e}")
             return []
@@ -273,7 +272,7 @@ class GitHubRepoAPI(IRepositoryAPI):
 # Точка входа для тестирования
 if __name__ == "__main__":
     # Создайте клиент GitHub (используйте ваш токен)
-    #client = Github("")
+    # client = Github("")
     api = GitHubRepoAPI('client')
 
     # Укажите ваш репозиторий
