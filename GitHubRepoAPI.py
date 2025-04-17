@@ -191,41 +191,33 @@ class GitHubRepoAPI(IRepositoryAPI):
         return result
 
     def get_comments(self, repo, obj) -> list[Comment]:
-        result = []
-        if isinstance(obj, Issue):
-            # TODO оптимизировать
-            issues = self.client.get_repo(repo._id).get_issues(state='all')
-            issue = None
-            for i in issues:
-                if i.number == obj._id:
-                    issue = i
-                    break
-            for c in issue.get_comments():
-                result.append(
-                    Comment(
-                        body=c.body,
-                        created_at=c.created_at,
-                        author=self.get_user_data(c.user),
-                    )
-                )
-        elif isinstance(obj, PullRequest):
-            # TODO оптимизировать
-            pulls = self.client.get_repo(repo._id).get_pulls(state='all')
-            pull = None
-            for p in pulls:
-                if p.number == obj._id:
-                    pull = p
-                    break
-            for c in pull.get_comments():
-                result.append(
-                    Comment(
-                        body=c.body,
-                        created_at=c.created_at,
-                        author=self.get_user_data(c.user.login),
-                    )
-                )
+        repo_client = self.client.get_repo(repo._id)
 
-        return result
+        try:
+            if isinstance(obj, Issue):
+                # Получаем issue напрямую по номеру
+                issue = repo_client.get_issue(number=obj._id)
+                comments = issue.get_comments()
+            elif isinstance(obj, PullRequest):
+                # Получаем PR напрямую по номеру
+                pull = repo_client.get_pull(number=obj._id)
+                comments = pull.get_comments()
+            else:
+                return []
+
+            # Формируем результат
+            return [
+                Comment(
+                    body=comment.body,
+                    created_at=comment.created_at,
+                    author=self.get_user_data(comment.user),
+                )
+                for comment in comments
+            ]
+
+        except Exception as e:
+            logging.error(f"Failed to get comments for {type(obj).__name__} {obj._id}: {e}")
+            return []
 
     def get_invites(self, repo: Repository) -> list[Invite]:
         try:
@@ -280,7 +272,7 @@ class GitHubRepoAPI(IRepositoryAPI):
 # Точка входа для тестирования
 if __name__ == "__main__":
     # Создайте клиент GitHub (используйте ваш токен)
-    # client = Github("tocken")
+    # client = Github("")
     api = GitHubRepoAPI('client')
 
     # Укажите ваш репозиторий
