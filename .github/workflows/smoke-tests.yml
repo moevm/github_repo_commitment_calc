@@ -1,0 +1,53 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  smoke-test:
+    strategy:
+      matrix:
+        args:
+          - "--invites"
+          - "--commits"
+          - "--pull_requests"
+          - "--issues"
+          - "--wikis"
+          - "--contributors"
+          - "--workflow_runs"
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Create list.txt
+      run: echo "thehighestmath/SummerPractice" > list.txt
+
+    - name: Run test
+      run: |
+        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out.csv --branch master
+
+    - name: Check if out.csv exists
+      run: ls out.csv
+
+    - name: Fail if out.csv does not exist
+      if: failure()
+      run: exit 1
+
+    - name: Show out.csv
+      run: cat out.csv

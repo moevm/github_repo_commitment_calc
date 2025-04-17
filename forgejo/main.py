@@ -1,14 +1,22 @@
 from dotenv import dotenv_values
 from pyforgejo import PyforgejoApi
 
+
+def require_env_arg(config, name):
+    if name not in config:
+        print("Cannot find " + name + " in .env file. Aborting...")
+        exit(1)
+
+
 config = dotenv_values(".env")
+require_env_arg(config, "API_TOKEN")
+require_env_arg(config, "BASE_URL")
+require_env_arg(config, "REPO_OWNER")
+require_env_arg(config, "REPO_NAME")
 
-if not "API_TOKEN" in config:
-    print("Cannot find API_TOKEN in .env file. Check if it exists and has correct token. Aborting...")
-    exit(1)
-client = PyforgejoApi(base_url="https://codeberg.org/api/v1", api_key=config["API_TOKEN"])
+client = PyforgejoApi(base_url=config["BASE_URL"], api_key=config["API_TOKEN"])
 
-repo = client.repository.repo_get(owner="harabat", repo="pyforgejo")
+repo = client.repository.repo_get(owner=config["REPO_OWNER"], repo=config["REPO_NAME"])
 
 
 print(f"Название: {repo.name}")

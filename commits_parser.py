@@ -1,24 +1,31 @@
-import csv
-import pytz
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from time import sleep
-from github import Github, Repository, GithubException, PullRequest
+from typing import Generator
 
-EMPTY_FIELD = 'Empty field'
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
-FIELDNAMES = ('repository name', 'author name', 'author login', 'author email', 'date and time', 'changed files', 'commit id', 'branch')
+import pytz
 
-def log_commit_to_csv(info, csv_name):
-    with open(csv_name, 'a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writerow(info)
+from constants import EMPTY_FIELD, GOOGLE_MAX_CELL_LEN, TIMEDELTA, TIMEZONE
+from interface_wrapper import IRepositoryAPI, Repository
+from utils import logger
 
 
-def log_commit_to_stdout(info):
-    print(info)
+@dataclass(kw_only=True, frozen=True)
+class CommitData:
+    repository_name: str = ''
+    author_name: str = ''
+    author_email: str = ''
+    datetime: str = ''
+    changed_files: str = ''
+    commit_id: str = ''
+    branch: str = ''
+    additions: str = ''
+    deletions: str = ''
 
 
-def log_repository_commits(repository: Repository, csv_name, start, finish, branch):
+def log_repository_commits(
+    client: IRepositoryAPI, repository: Repository, csv_name, start, finish, branch
+):
     branches = []
     match branch:
         case 'all':
@@ -31,38 +38,58 @@ def log_repository_commits(repository: Repository, csv_name, start, finish, bran
 
     for branch in branches:
         print(f'Processing branch {branch}')
-        # TODO add support of since and until in https://pygithub.readthedocs.io/en/stable/github_objects/Repository.html#github.Repository.Repository.get_commits
-        for commit in repository.get_commits(sha=branch):
-            if commit.commit.author.date.astimezone(
-                    pytz.timezone(TIMEZONE)) < start or commit.commit.author.date.astimezone(
-                pytz.timezone(TIMEZONE)) > finish:
+        commits = client.get_commits(repository)
+        for commit in commits:
+            if (
+                commit.date.astimezone(pytz.timezone(TIMEZONE)) < start
+                or commit.date.astimezone(pytz.timezone(TIMEZONE)) > finish
+            ):
                 continue
-            if commit.commit is not None:
-                nvl = lambda val: val or EMPTY_FIELD
-                commit_data = [repository.full_name, commit.commit.author.name, nvl(commit.author.login if commit.author else None), nvl(commit.commit.author.email),
-                               commit.commit.author.date, '; '.join([file.filename for file in commit.files]), commit.commit.sha, branch]
-                info = dict(zip(FIELDNAMES, commit_data))
 
-                log_commit_to_csv(info, csv_name)
-                log_commit_to_stdout(info)
-                sleep(TIMEDELTA)
+            changed_files = '; '.join([file for file in commit.files])
+            changed_files = changed_files[:GOOGLE_MAX_CELL_LEN]
+            commit_data = CommitData(
+                repository_name=repository.name,
+                author_name=commit.author.username,
+                author_email=commit.author.email or EMPTY_FIELD,
+                datetime=commit.date.astimezone(pytz.timezone(TIMEZONE)).isoformat(),
+                changed_files=changed_files,
+                commit_id=commit._id,
+                branch=branch,
+                additions=commit.additions,
+                deletions=commit.deletions,
+            )
+            info = asdict(commit_data)
+
+            logger.log_to_csv(csv_name, list(info.keys()), info)
+            logger.log_to_stdout(info)
+
+            sleep(TIMEDELTA)
 
 
-def log_commits(client: Github, working_repos, csv_name, start, finish, branch, fork_flag):
-    with open(csv_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(FIELDNAMES)
+def log_commits(
+    binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
+    csv_name: str,
+    start: datetime,
+    finish: datetime,
+    branch: str,
+    fork_flag: bool,
+):
+    info = asdict(CommitData())
+    logger.log_to_csv(csv_name, list(info.keys()))
 
-
-    for repo in working_repos:
+    for client, repo, token in binded_repos:
         try:
-            print('=' * 20, repo.full_name, '=' * 20)
-            log_repository_commits(repo, csv_name, start, finish, branch)
+            logger.log_title(repo.name)
+            log_repository_commits(client, repo, csv_name, start, finish, branch)
             if fork_flag:
-                for forked_repo in repo.get_forks():
-                    print('=' * 20, "FORKED:", forked_repo.full_name, '=' * 20)
-                    log_repository_commits(forked_repo, csv_name, start, finish, branch)
+                for forked_repo in client.get_forks(repo):
+                    logger.log_title(f"FORKED: {forked_repo.name}")
+                    log_repository_commits(
+                        client, forked_repo, csv_name, start, finish, branch
+                    )
                     sleep(TIMEDELTA)
             sleep(TIMEDELTA)
         except Exception as e:
             print(e)
+            exit(1)
