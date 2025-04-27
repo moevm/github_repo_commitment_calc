@@ -3,7 +3,8 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from time import sleep
 from typing import Generator
-
+import os
+from typing import Optional
 import pytz
 import requests
 
@@ -43,81 +44,70 @@ class IssueDataWithComment(IssueData):
     comment_author_email: str = ''
 
 
-def get_connected_pulls(issue_number, repo_owner, repo_name, token):
-    # TODO как-то заменить
-    return
-    access_token = token
-    repo_owner = repo_owner.login
-    # Формирование запроса GraphQL
-    query = """
-    {
-      repository(owner: "%s", name: "%s") {
-        issue(number: %d) {
-          timelineItems(first: 50, itemTypes:[CONNECTED_EVENT,CROSS_REFERENCED_EVENT]) {
-            filteredCount
-            nodes {
-              ... on ConnectedEvent {
-                ConnectedEvent: subject {
-                  ... on PullRequest {
-                    number
-                    title
-                    url
-                  }
-                }
-              }
-              ... on CrossReferencedEvent {
-                CrossReferencedEvent: source {
-                  ... on PullRequest {
-                    number
-                    title
-                    url
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }""" % (
-        repo_owner,
-        repo_name,
-        issue_number,
-    )
+def get_connected_pulls(
+    issue_number: int,
+    repo_owner: str,
+    repo_name: str,
+    forgejo_token: Optional[str] = None
+) -> str:
 
-    # Формирование заголовков запроса
+    base_url = os.getenv('FORGEJO_BASE_URL')
+    if not base_url:
+        raise ValueError("FORGEJO_BASE_URL environment variable must be set")
+    
+    token = forgejo_token or os.getenv('FORGEJO_TOKEN')
+    if not token:
+        raise ValueError(
+            "Forgejo API token is required. "
+            "Set FORGEJO_TOKEN environment variable or pass forgejo_token parameter"
+        )
+    
     headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
+        "Authorization": f"token {token}",
+        "Accept": "application/json"
     }
+    
+    connected_prs = set()
+    api_base = f"{base_url}/api/v1/repos/{repo_owner}/{repo_name}"
+    
+    try:
+        comments_response = requests.get(
+            f"{api_base}/issues/{issue_number}/comments",
+            headers=headers
+        )
+        comments_response.raise_for_status()
+        
+        for comment in comments_response.json():
+            body = comment.get("body", "")
+            if not body:
+                continue
+                
+            for word in body.split():
+                clean_word = word.strip(".,:;!?()[]{}")
+                if len(clean_word) > 1 and clean_word[1:].isdigit():
+                    if clean_word.startswith('#'):  
+                        pr_num = clean_word[1:]
+                        connected_prs.add(f"{base_url}/{repo_owner}/{repo_name}/pulls/{pr_num}")
+                    elif clean_word.startswith('!'):  
+                        pr_num = clean_word[1:]
+                        connected_prs.add(f"{base_url}/{repo_owner}/{repo_name}/pulls/{pr_num}")
 
-    # Отправка запроса GraphQL
-    response = requests.post(
-        "https://api.github.com/graphql",
-        headers=headers,
-        data=json.dumps({"query": query}),
-    )
-    response_data = response.json()
-    # Обработка полученных данных
-    pull_request_data = response_data["data"]["repository"]["issue"]
-    list_url = []
-    if pull_request_data is not None:
-        issues_data = pull_request_data["timelineItems"]["nodes"]
-        for pulls in issues_data:
-            if (
-                pulls.get("CrossReferencedEvent") is not None
-                and pulls.get("CrossReferencedEvent").get("url") not in list_url
-            ):
-                list_url.append(pulls.get("CrossReferencedEvent").get("url"))
-            if (
-                pulls.get("ConnectedEvent") is not None
-                and pulls.get("ConnectedEvent").get("url") not in list_url
-            ):
-                list_url.append(pulls.get("ConnectedEvent").get("url"))
-        if list_url == []:
-            return 'Empty field'
-        else:
-            return ';'.join(list_url)
-    return 'Empty field'
+        prs_response = requests.get(
+            f"{api_base}/pulls?state=all",
+            headers=headers
+        )
+        prs_response.raise_for_status()
+        
+        for pr in prs_response.json():
+            if f"#{issue_number}" in pr.get("body", ""):
+                connected_prs.add(pr.get("html_url"))
+                
+    except requests.exceptions.RequestException as e:
+        print(f"[Warning] Failed to fetch connected PRs: {str(e)}")
+        return 'Empty field'
+    
+    return ';'.join(sorted(connected_prs)) if connected_prs else 'Empty field'
+
 
 
 def log_repository_issues(
