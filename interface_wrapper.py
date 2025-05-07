@@ -194,25 +194,26 @@ class IRepositoryAPI(ABC):
         pass
 
 
-# Фабрика для создания API
 class RepositoryFactory:
     @staticmethod
-    def create_api(
-        source: str, token: str, base_url: str | None = None
-    ) -> IRepositoryAPI:
+    def create_api(token: str, base_url: str | None = None) -> IRepositoryAPI:
         from ForgejoRepoAPI import ForgejoRepoAPI
         from GitHubRepoAPI import GitHubRepoAPI
 
-        if source == 'github':
+        errors = []
+
+        try:
             return GitHubRepoAPI(Github(auth=Auth.Token(token)))
-        elif source == 'forgejo':
-            if not isinstance(base_url, str):
-                raise ValueError(
-                    f"base_url for PyforgejoApi should be str, got {type(base_url)}"
-                )
-            return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
-        else:
-            raise ValueError(f"Unsupported source: {source}")
+        except Exception as e:
+            errors.append(f"GitHub login failed: {e}")
+
+        if base_url:
+            try:
+                return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
+            except Exception as e:
+                errors.append(f"Forgejo login failed: {e}")
+
+        raise Exception(" / ".join(errors))
 
 
 # Сервис для расчёта метрик
