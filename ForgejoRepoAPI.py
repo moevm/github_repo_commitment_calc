@@ -316,7 +316,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
                         Invite(
                             _id=0,
                             invitee=user,
-                            created_at= None,
+                            created_at=None,
                             html_url=user.html_url,
                         )
                     )
@@ -379,8 +379,10 @@ if __name__ == "__main__":
 
     # Получение приглашений
     test_users = [
-        User(login="user1", username="User One", email="", html_url="", node_id="", type="", bio="", site_admin=False, _id=""),
-        User(login="user2", username="User Two", email="", html_url="", node_id="", type="", bio="", site_admin=False, _id=""),
+        User(login="user1", username="User One", email="", html_url="", node_id="",
+             type="", bio="", site_admin=False, _id=""),
+        User(login="user2", username="User Two", email="", html_url="", node_id="",
+             type="", bio="", site_admin=False, _id=""),
     ]
 
     invites = api.get_invites(repo, users=test_users)
