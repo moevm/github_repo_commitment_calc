@@ -317,7 +317,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
                             _id=0,
                             invitee=user,
                             created_at= None,
-                            html_url=user.html_url
+                            html_url=user.html_url,
                         )
                     )
             return invites
@@ -388,5 +388,3 @@ if __name__ == "__main__":
 
     for invite in invites:
         print(f"Invitee: {invite.invitee.username}, URL: {invite.html_url}")
-
-        
