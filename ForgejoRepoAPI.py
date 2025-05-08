@@ -299,8 +299,32 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
         return result
 
-    def get_invites(self, repo: Repository) -> list[Invite]:
-        return []
+    def get_invites(self, repo: Repository, users: list[User] = None) -> list[Invite]:
+        if users is None:
+            return []
+
+        try:
+            collaborators = self.client.repository.repo_list_collaborators(
+                owner=repo.owner.login, repo=repo.name
+            )
+            collab_logins = {c.login for c in collaborators}
+
+            invites = []
+            for user in users:
+                if user.login not in collab_logins:
+                    invites.append(
+                        Invite(
+                            _id=0,
+                            invitee=user,
+                            created_at= None,
+                            html_url=user.html_url
+                        )
+                    )
+            return invites
+
+        except Exception as e:
+            logging.error(f"Failed to simulate invites for Forgejo repo {repo.name}: {e}")
+            return []
 
     def get_rate_limiting(self) -> tuple[int, int]:
         return sys.maxsize, sys.maxsize
@@ -308,7 +332,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
 # Точка входа для тестирования
 if __name__ == "__main__":
-    client = PyforgejoApi(api_key="token", base_url="https://codeberg.org/api/v1")
+    client = PyforgejoApi(api_key="0c763553a2156eab22f370f99f93e2f57d3b14db", base_url="https://codeberg.org/api/v1")
     api = ForgejoRepoAPI(client)
 
     repo = api.get_repository("harabat/pyforgejo")
@@ -352,3 +376,16 @@ if __name__ == "__main__":
         print(
             f"Branch: {branch.name}, Last Commit: {branch.last_commit._id if branch.last_commit else 'None'}"
         )
+
+
+    # Получение приглашений
+    test_users = [
+        User(login="user1", username="User One", email="", html_url="", node_id="", type="", bio="", site_admin=False, _id=""),
+        User(login="user2", username="User Two", email="", html_url="", node_id="", type="", bio="", site_admin=False, _id=""),
+    ]
+
+    invites = api.get_invites(repo, users=test_users)
+    print(f"Total Invites: {len(invites)}")
+
+    for invite in invites:
+        print(f"Invitee: {invite.invitee.username}, URL: {invite.html_url}")
