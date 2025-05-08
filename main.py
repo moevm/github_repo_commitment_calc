@@ -37,10 +37,10 @@ def parse_args():
     )
 
     parser.add_argument(
-    '--base_url',
-    type=str,
-    required=False,
-    help='Base URL for Forgejo instance (if using Forgejo)',
+        '--base_url',
+        type=str,
+        required=False,
+        help='Base URL for Forgejo instance (if using Forgejo)',
     )
 
     token = parser.add_mutually_exclusive_group(required=True)

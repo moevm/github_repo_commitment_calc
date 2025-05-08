@@ -58,7 +58,6 @@ class Clients:
 
     def get_next_client(self) -> tuple[IRepositoryAPI, str]:
         return self._get_next_client()
-  
 
 
 def get_next_binded_repo(clients: Clients, repositories: list[str]):
