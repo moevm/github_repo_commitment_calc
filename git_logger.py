@@ -7,7 +7,6 @@ from interface_wrapper import IRepositoryAPI, RepositoryFactory
 def login(token, base_url):
     try:
         client = RepositoryFactory.create_api(token, base_url)
-        client.get_user_data("test")  
         return client
     except Exception:
         return None
