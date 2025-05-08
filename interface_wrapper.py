@@ -94,7 +94,7 @@ class PullRequest:
 class Invite:
     _id: int
     invitee: User
-    created_at: datetime
+    created_at: datetime | None
     html_url: str
 
 
