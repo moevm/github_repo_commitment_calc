@@ -21,11 +21,11 @@ class logger:
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
         if isinstance(row, dict):
-            with open(csv_name, 'a', newline='') as file:
+            with open(csv_name, 'a', encoding='utf-8', newline='') as file:
                 writer = csv.DictWriter(file, fieldnames=field_names)
                 writer.writerow(row)
         elif row is None:
-            with open(csv_name, 'w', newline='') as file:
+            with open(csv_name, 'w', encoding='utf-8', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(field_names)
         else:
