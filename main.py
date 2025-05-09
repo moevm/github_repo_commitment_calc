@@ -36,6 +36,13 @@ def parse_args():
         action="store_true",
     )
 
+    parser.add_argument(
+        '--base_url',
+        type=str,
+        required=False,
+        help='Base URL for Forgejo instance (if using Forgejo)',
+    )
+
     token = parser.add_mutually_exclusive_group(required=True)
     token.add_argument('-t', '--token', type=str, help='account access token')
     token.add_argument('--tokens', type=str, help='path to your tokens')
@@ -170,16 +177,15 @@ def main():
 
     repositories = git_logger.get_repos_from_file(args.list)
 
-    print(repositories)
-
     try:
-        clients = git_logger.Clients("github", tokens)
+        clients = git_logger.Clients(tokens, args.base_url)
         binded_repos = git_logger.get_next_binded_repo(clients, repositories)
     except Exception as e:
-        print(e)
-        print(traceback.print_exc())
-    else:
-        run(args, binded_repos, repositories)
+        print(f"Failed to initialize any clients: {e}")
+        print(traceback.format_exc())
+        return
+
+    run(args, binded_repos, repositories)
 
 
 if __name__ == '__main__':

@@ -30,7 +30,6 @@ class GitHubRepoAPI(IRepositoryAPI):
             logging.error(
                 'Github: Connect: user could not be authenticated please try again.'
             )
-            exit(1)
         else:
             return client
 

@@ -10,9 +10,12 @@ TIMEDELTA = 0.05
 TIMEZONE = 'Europe/Moscow'
 
 
-def login(source, token, base_url):
-    client = RepositoryFactory.create_api(source, token, base_url)
-    return client
+def login(token, base_url):
+    try:
+        client = RepositoryFactory.create_api(token, base_url)
+        return client
+    except Exception:
+        return None
 
 
 def get_tokens_from_file(tokens_path: str) -> list[str]:
@@ -30,50 +33,36 @@ def get_repos_from_file(repos_path: str) -> list[str]:
 
 
 class Clients:
-    def __init__(self, source: str, tokens: list[str], base_url: str | None = None):
-        self.clients = self._init_clients(source, tokens, base_url)
-        self.cur_client = None
+    def __init__(self, tokens: list[str], base_url: str | None = None):
+        self.clients = []
+        self.token_map = {}
 
-    def _init_clients(self, source: str, tokens: list[str], base_url: str | None) -> list[dict]:
-        clients = [{"client": login(source, token, base_url), "token": token} for token in tokens]
-        return clients
+        for token in tokens:
+            client = login(token, base_url)
+            if client:
+                self.clients.append(client)
+                self.token_map[client] = token
 
-    def get_next_client(self) -> IRepositoryAPI:
+        if not self.clients:
+            raise Exception("No valid tokens for either GitHub or Forgejo")
+
+    def _get_next_client(self) -> tuple[IRepositoryAPI, str]:
         client = None
         max_remaining_limit = -1
 
-        for client_tmp in self.clients:
-            remaining_limit, limit = client_tmp["client"].get_rate_limiting()
-
-            # можно добавить вывод износа токена
-            # можно дополнительно проверять на 403 и временно пропускать эти токены,
-            # либо завести константу "минимальный коэффициент износа" и не трогать "изношенные" токены
-
-            if remaining_limit > max_remaining_limit:
-                client = client_tmp
-                max_remaining_limit = remaining_limit
-
+        for c in self.clients:
+            remaining, _ = c.get_rate_limiting()
+            if remaining > max_remaining_limit:
+                client = c
+                max_remaining_limit = remaining
             sleep(TIMEDELTA)
 
         if client is None:
             raise Exception("No git clients available")
+        return client, self.token_map[client]
 
-        self.cur_client = client
-        return client
-
-
-def get_next_repo(clients: Clients, repositories):
-    with open(repositories, 'r') as file:
-        list_repos = [x for x in file.read().split('\n') if x]
-    for repo_name in list_repos:
-        try:
-            cur_client = clients.get_next_client()
-            repo = cur_client['client'].get_repository(repo_name)
-        except Exception as err:
-            print(f'get_next_repo(): error {err}')
-            print(f'get_next_repo(): failed to load repository "{repo_name}"')
-        else:
-            yield cur_client['client'], repo, cur_client['token']
+    def get_next_client(self) -> tuple[IRepositoryAPI, str]:
+        return self._get_next_client()
 
 
 def get_next_binded_repo(clients: Clients, repositories: list[str]):
