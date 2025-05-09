@@ -17,6 +17,7 @@ from interface_wrapper import (
     User,
     WikiPage,
     logging,
+    WorkflowRun
 )
 
 
@@ -328,6 +329,9 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
     def get_rate_limiting(self) -> tuple[int, int]:
         return sys.maxsize, sys.maxsize
+
+    def get_workflow_runs(self, repo) -> list[WorkflowRun]:
+        return []
 
 
 # Точка входа для тестирования
