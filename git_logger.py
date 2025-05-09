@@ -1,7 +1,13 @@
+from interface_wrapper import (
+    RepositoryFactory,
+    IRepositoryAPI
+)
+from GitHubRepoAPI import GitHubRepoAPI
 from time import sleep
+import requests
 
-from constants import TIMEDELTA
-from interface_wrapper import IRepositoryAPI, RepositoryFactory
+TIMEDELTA = 0.05
+TIMEZONE = 'Europe/Moscow'
 
 
 def login(token, base_url):
@@ -53,7 +59,6 @@ class Clients:
 
         if client is None:
             raise Exception("No git clients available")
-
         return client, self.token_map[client]
 
     def get_next_client(self) -> tuple[IRepositoryAPI, str]:
@@ -66,31 +71,48 @@ def get_next_binded_repo(clients: Clients, repositories: list[str]):
             client, token = clients.get_next_client()
             repo = client.get_repository(repo_name)
         except Exception as err:
-            print(f'get_next_repo(): error {err}')
-            print(f'get_next_repo(): failed to load repository "{repo_name}"')
-            exit(1)
+            print(f'get_next_binded_repo(): error {err}')
+            print(f'get_next_binded_repo(): failed to load repository "{repo_name}"')
         else:
             yield client, repo, token
 
 
-def get_assignee_story(git_object):
-    # TODO
-    return ""
+def get_assignee_story(git_object, client, token, repository):
+    assignee_result = ""
 
-    '''assignee_result = ""
-    events = (
-        git_object.get_issue_events()
-        if type(github_object) is PullRequest.PullRequest
-        else github_object.get_events()
-    )
-    for event in events:
-        if event.event in ["assigned", "unassigned"]:
-            date = event.created_at
-            assigner = github_object.user.login
-            assignee = event.assignee.login
-            assignee_result += f"{date}: {assigner} -"
-            if event.event == "unassigned":
-                assignee_result += "/"
-            assignee_result += f"> {assignee}; "
-        sleep(TIMEDELTA)
-    return assignee_result'''
+    try:
+        repo_owner = repository.owner.login
+        repo_name = repository.name
+        issue_index = git_object._id  # Для pull request и issue одинаково
+
+        base_url = client.get_base_url().rstrip('/')
+
+        url = f"{base_url}/repos/{repo_owner}/{repo_name}/issues/{issue_index}/timeline"
+        headers = {
+            "Authorization": f"Bearer {token}" if client is GitHubRepoAPI else f"token {token}",
+            "Accept": "application/json"
+        }
+
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch issue timeline: {response.status_code}, {response.text}")
+
+        events = response.json()
+
+        for event in events:
+            if event.get('event') in ["assigned", "unassigned"]:
+                date = event.get('created_at')
+                assigner = event.get('actor', {}).get('login', 'unknown')
+                assignee = event.get('assignee', {}).get('login', 'unknown')
+
+                assignee_result += f"{date}: {assigner} -"
+                if event['event'] == "unassigned":
+                    assignee_result += "/"
+                assignee_result += f"> {assignee}; "
+
+                sleep(TIMEDELTA)
+
+    except Exception as e:
+        print(f"get_assignee_story(): error {e}")
+
+    return assignee_result

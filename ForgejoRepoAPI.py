@@ -329,6 +329,9 @@ class ForgejoRepoAPI(IRepositoryAPI):
     def get_rate_limiting(self) -> tuple[int, int]:
         return sys.maxsize, sys.maxsize
 
+    def get_base_url(self) -> str:
+        return self.client.base_url
+
 
 # Точка входа для тестирования
 if __name__ == "__main__":

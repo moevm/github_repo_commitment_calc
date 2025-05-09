@@ -267,6 +267,9 @@ class GitHubRepoAPI(IRepositoryAPI):
             )
             return []
 
+    def get_base_url(self) -> str:
+        return 'https://api.github.com'
+
 
 # Точка входа для тестирования
 if __name__ == "__main__":
