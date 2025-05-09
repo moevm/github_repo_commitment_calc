@@ -68,13 +68,13 @@ class Clients:
 def get_next_binded_repo(clients: Clients, repositories: list[str]):
     for repo_name in repositories:
         try:
-            cur_client = clients.get_next_client()
-            repo = cur_client['client'].get_repository(repo_name)
+            client, token = clients.get_next_client()
+            repo = client.get_repository(repo_name)
         except Exception as err:
             print(f'get_next_binded_repo(): error {err}')
             print(f'get_next_binded_repo(): failed to load repository "{repo_name}"')
         else:
-            yield cur_client['client'], repo, cur_client['token']
+            yield client, repo, token
 
 
 def get_assignee_story(git_object, client, token, repository):
