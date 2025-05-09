@@ -2,6 +2,7 @@ from interface_wrapper import (
     RepositoryFactory,
     IRepositoryAPI
 )
+from GitHubRepoAPI import GitHubRepoAPI
 from time import sleep
 import requests
 
@@ -21,7 +22,14 @@ def get_tokens_from_file(tokens_path: str) -> list[str]:
     return tokens
 
 
-class GitClients:
+def get_repos_from_file(repos_path: str) -> list[str]:
+    with open(repos_path, 'r') as file:
+        list_repos = [x for x in file.read().split('\n') if x]
+
+    return list_repos
+
+
+class Clients:
     def __init__(self, source: str, tokens: list[str], base_url: str | None = None):
         self.clients = self._init_clients(source, tokens, base_url)
         self.cur_client = None
@@ -54,10 +62,9 @@ class GitClients:
         return client
 
 
-def get_next_repo(clients: GitClients, repositories):
+def get_next_repo(clients: Clients, repositories):
     with open(repositories, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
-    print(list_repos)
     for repo_name in list_repos:
         try:
             cur_client = clients.get_next_client()
@@ -65,27 +72,35 @@ def get_next_repo(clients: GitClients, repositories):
         except Exception as err:
             print(f'get_next_repo(): error {err}')
             print(f'get_next_repo(): failed to load repository "{repo_name}"')
-            exit(1)
         else:
-            print(cur_client['token'])
-            yield repo, cur_client['token']
+            yield cur_client['client'], repo, cur_client['token']
 
 
-def get_assignee_story(git_object):
+def get_next_binded_repo(clients: Clients, repositories: list[str]):
+    for repo_name in repositories:
+        try:
+            cur_client = clients.get_next_client()
+            repo = cur_client['client'].get_repository(repo_name)
+        except Exception as err:
+            print(f'get_next_binded_repo(): error {err}')
+            print(f'get_next_binded_repo(): failed to load repository "{repo_name}"')
+        else:
+            yield cur_client['client'], repo, cur_client['token']
+
+
+def get_assignee_story(git_object, client, token, repository):
     assignee_result = ""
 
     try:
-        repo_owner = git_object.repository.owner.username
-        repo_name = git_object.repository.name
-        issue_index = git_object.number  # Для pull request и issue одинаково
+        repo_owner = repository.owner.login
+        repo_name = repository.name
+        issue_index = git_object._id  # Для pull request и issue одинаково
 
-        client = git_object._client  # доступ к api-клиенту
-        token = client.token
-        base_url = client.base_url.rstrip('/')
+        base_url = client.get_base_url().rstrip('/')
 
         url = f"{base_url}/repos/{repo_owner}/{repo_name}/issues/{issue_index}/timeline"
         headers = {
-            "Authorization": f"token {token}",
+            "Authorization": f"Bearer {token}" if client is GitHubRepoAPI else f"token {token}",
             "Accept": "application/json"
         }
 
