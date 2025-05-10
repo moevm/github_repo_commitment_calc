@@ -333,6 +333,9 @@ class ForgejoRepoAPI(IRepositoryAPI):
     def get_workflow_runs(self, repo) -> list[WorkflowRun]:
         return []
 
+    def get_base_url(self) -> str:
+        return self.client.base_url
+
 
 # Точка входа для тестирования
 if __name__ == "__main__":

@@ -205,7 +205,7 @@ def log_repository_issues(
             closer_name=issue.closed_by.username if issue.closed_by else None,
             closer_login=issue.closed_by.login if issue.closed_by else None,
             closer_email=issue.closed_by.email if issue.closed_by else None,
-            assignee_story=get_assignee_story(issue),
+            assignee_story=get_assignee_story(issue, client, token, repository),
             connected_pull_requests=(
                 get_connected_pulls(token, issue._id, repository.owner, repository.name)
                 if issue._id is not None

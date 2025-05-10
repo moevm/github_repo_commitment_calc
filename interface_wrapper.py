@@ -60,7 +60,7 @@ class Repository:
 
 @dataclass
 class Issue:
-    _id: str
+    _id: int
     title: str
     state: str
     created_at: datetime
@@ -191,6 +191,10 @@ class IRepositoryAPI(ABC):
 
     @abstractmethod
     def get_workflow_runs(self, repo: Repository) -> list[WorkflowRun]:
+        pass
+
+    @abstractmethod
+    def get_base_url(self) -> str:
         pass
 
 

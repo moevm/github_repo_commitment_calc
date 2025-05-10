@@ -150,7 +150,7 @@ def log_repositories_pr(
             merger_email=pull.merged_by.email if pull.merged_by else None,
             source_branch=pull.head_ref,
             target_branch=pull.base_ref,
-            assignee_story=get_assignee_story(pull),
+            assignee_story=get_assignee_story(pull, client, token, repository),
             related_issues=(
                 get_related_issues(pull._id, repository.owner, repository.name, token)
                 if pull.issue_url is not None
