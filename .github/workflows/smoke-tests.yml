@@ -9,6 +9,7 @@ on:
 jobs:
   smoke-test:
     strategy:
+      fail-fast: false
       matrix:
         args:
           - "--invites"
@@ -51,3 +52,44 @@ jobs:
 
     - name: Show out.csv
       run: cat out.csv
+
+    - name: Check header in first line
+      run: |
+        case "${{ matrix.args }}" in
+          --invites)
+            HEADER="repository name,invited login,invite creation date,invitation url"
+            ;;
+          --commits)
+            HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
+            ;;
+          --pull_requests)
+            HEADER="repository name,title,id,state,commit into,commit from,created at,creator name,creator login,creator email,changed files,comment body,comment created at,comment author name,comment author login,comment author email,merger name,merger login,merger email,source branch,target branch,assignee story,related issues,labels,milestone"
+            ;;
+          --issues)
+            HEADER="repository name,number,title,state,task,created at,creator name,creator login,creator email,closer name,closer login,closer email,closed at,comment body,comment created at,comment author name,comment author login,comment author email,assignee story,connected pull requests,labels,milestone"
+            ;;
+          --wikis)
+            HEADER="repository name,author name,author login,datetime,page,action,revision id,added lines,deleted lines"
+            ;;
+          --contributors)
+            HEADER="repository_name,login,name,email,url,permissions,total_commits,node_id,type,bio,site_admin"
+            ;;
+          --workflow_runs)
+            HEADER="repository_name,display_title,event,head_branch,head_sha,name,path,started_at,total_duration,conclusion,status,url"
+            ;;
+          *)
+            echo "Unknown ARG: '${{ matrix.args }}'"
+            exit 1
+            ;;
+        esac
+
+        FIRST_LINE=$(head -n 1 out.csv)
+
+        if [[ "$FIRST_LINE" == "$HEADER"* ]]; then
+          echo "Header is valid for ${{ matrix.args }}"
+        else
+          echo "::error::Header is invalid for ${{ matrix.args }}"
+          echo "Expected: $HEADER"
+          echo "Actual: $FIRST_LINE"
+          exit 1
+        fi
