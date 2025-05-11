@@ -8,3 +8,8 @@
 
 Созвон с заказчиком: [https://disk.yandex.ru/i/E_1gt-nuAAIdyQ](https://disk.yandex.ru/i/E_1gt-nuAAIdyQ)
 
+
+## Итерация 3
+Презентация: [reports/3_slideshow.pdf](reports/3_slideshow.pdf)
+
+Созвон с заказчиком: [https://disk.yandex.ru/i/SiKAG909Fp3ICA](https://disk.yandex.ru/i/SiKAG909Fp3ICA)
