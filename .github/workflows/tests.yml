@@ -54,12 +54,42 @@ jobs:
 
     - name: Check header in first line
       run: |
-        HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
+        # Определяем HEADER в зависимости от matrix.args
+        case "${{ matrix.args }}" in
+          --invites)
+            HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
+            ;;
+          --commits)
+            HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
+            ;;
+          --pull_requests)
+            HEADER="repository name,pull request number,title,state,author login,author email,date and time,merged,changed files,additions,deletions,commits,url,branch"
+            ;;
+          --issues)
+            HEADER="repository name,issue number,title,state,author login,author email,date and time,url,branch"
+            ;;
+          --wikis)
+            HEADER="repository name,wiki page title,author name,author login,author email,date and time,action,url,branch"
+            ;;
+          --contributors)
+            HEADER="repository name,contributor login,number of commits,additions,deletions,branch"
+            ;;
+          --workflow_runs)
+            HEADER="repository name,workflow name,run id,status,conclusion,author login,author email,date and time,url,branch"
+            ;;
+          *)
+            echo "Unknown ARG: '${{ matrix.args }}'"
+            exit 1
+            ;;
+        esac
+
         FIRST_LINE=$(head -n 1 out.csv)
 
         if [[ "$FIRST_LINE" == "$HEADER"* ]]; then
-          echo "Header is valid"
+          echo "Header is valid for ${{ matrix.args }}"
         else
-          echo "Header is invalid"
+          echo "::error::Header is invalid for ${{ matrix.args }}"
+          echo "Expected: $HEADER"
+          echo "Actual: $FIRST_LINE"
           exit 1
         fi
