@@ -49,6 +49,9 @@ jobs:
       if: failure()
       run: exit 1
 
+    - name: Show out.csv
+      run: cat out.csv
+
     - name: Check header in first line
       run: |
         HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
@@ -60,6 +63,3 @@ jobs:
           echo "Header is invalid"
           exit 1
         fi
-
-    - name: Show out.csv
-      run: cat out.csv
