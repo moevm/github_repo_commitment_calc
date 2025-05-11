@@ -1,1 +1,5 @@
+venv/
 __pycache__
+list.txt
+tokens.txt
+out.csv

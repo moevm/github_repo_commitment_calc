@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
-from datetime import datetime
-from dataclasses import dataclass
 import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime
 
-from github import Github
+from github import Auth, Github
 from pyforgejo import PyforgejoApi
 
 # Настройка логирования
@@ -39,6 +39,8 @@ class Commit:
     author: User
     date: datetime
     files: list[str]
+    additions: int
+    deletions: int
 
 
 @dataclass
@@ -58,7 +60,7 @@ class Repository:
 
 @dataclass
 class Issue:
-    _id: str
+    _id: int
     title: str
     state: str
     created_at: datetime
@@ -92,7 +94,7 @@ class PullRequest:
 class Invite:
     _id: int
     invitee: User
-    created_at: datetime
+    created_at: datetime | None
     html_url: str
 
 
@@ -107,6 +109,22 @@ class Comment:
 class WikiPage:
     title: str
     content: str
+
+
+@dataclass
+class WorkflowRun:
+    display_title: str
+    event: str
+    head_branch: str
+    head_sha: str
+    name: str
+    path: str
+    created_at: datetime
+    run_started_at: datetime
+    updated_at: datetime
+    conclusion: str
+    status: str
+    url: str
 
 
 # Интерфейс API
@@ -171,22 +189,35 @@ class IRepositoryAPI(ABC):
     def get_rate_limiting(self) -> tuple[int, int]:
         pass
 
+    @abstractmethod
+    def get_workflow_runs(self, repo: Repository) -> list[WorkflowRun]:
+        pass
 
-# Фабрика для создания API
+    @abstractmethod
+    def get_base_url(self) -> str:
+        pass
+
+
 class RepositoryFactory:
     @staticmethod
-    def create_api(source: str, token: str, base_url: str | None = None) -> IRepositoryAPI:
-        from GitHubRepoAPI import GitHubRepoAPI
+    def create_api(token: str, base_url: str | None = None) -> IRepositoryAPI:
         from ForgejoRepoAPI import ForgejoRepoAPI
+        from GitHubRepoAPI import GitHubRepoAPI
 
-        if source == 'github':
-            return GitHubRepoAPI(Github(token))
-        elif source == 'forgejo':
-            if not isinstance(base_url, str):
-                raise ValueError(f"base_url for PyforgejoApi should be str, got {type(base_url)}")
-            return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
-        else:
-            raise ValueError(f"Unsupported source: {source}")
+        errors = []
+
+        try:
+            return GitHubRepoAPI(Github(auth=Auth.Token(token)))
+        except Exception as e:
+            errors.append(f"GitHub login failed: {e}")
+
+        if base_url:
+            try:
+                return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
+            except Exception as e:
+                errors.append(f"Forgejo login failed: {e}")
+
+        raise Exception(" / ".join(errors))
 
 
 # Сервис для расчёта метрик

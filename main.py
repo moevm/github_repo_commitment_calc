@@ -1,18 +1,16 @@
 import argparse
-from datetime import datetime
-import pytz
 import traceback
 
-
-import git_logger
-import export_sheets
 import commits_parser
-import pull_requests_parser
-import issues_parser
-import invites_parser
-import wikipars
 import contributors_parser
-from interface_wrapper import RepositoryFactory
+import export_sheets
+import git_logger
+import invites_parser
+import issues_parser
+import pull_requests_parser
+import wikipars
+import workflow_runs_parser
+from utils import parse_time
 
 
 def parse_args():
@@ -26,6 +24,9 @@ def parse_args():
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
     parser.add_argument("--contributors", help="log contributors", action="store_true")
     parser.add_argument(
+        "--workflow_runs", help="log workflow runs", action="store_true"
+    )
+    parser.add_argument(
         "--forks_include", help="logging data from forks", action="store_true"
     )
     parser.add_argument(
@@ -33,6 +34,13 @@ def parse_args():
         "--export_google_sheets",
         help="export table to google sheets",
         action="store_true",
+    )
+
+    parser.add_argument(
+        '--base_url',
+        type=str,
+        required=False,
+        help='Base URL for Forgejo instance (if using Forgejo)',
     )
 
     token = parser.add_mutually_exclusive_group(required=True)
@@ -119,22 +127,44 @@ def parse_args():
     return parser.parse_args()
 
 
-def parse_time(datetime_str):
-    start = (
-        datetime_str[0].split('/') + datetime_str[1].split(':')
-        if len(datetime_str) == 2
-        else datetime_str[0].split('/') + ['00', '00', '00']
-    )
-    start = [int(i) for i in start]
-    start_datetime = datetime(
-        year=start[0],
-        month=start[1],
-        day=start[2],
-        hour=start[3],
-        minute=start[4],
-        second=start[5],
-    )
-    return start_datetime.astimezone(pytz.timezone(git_logger.TIMEZONE))
+def run(args, binded_repos, repos_for_wiki=None):
+    start = parse_time(args.start.split('-'))
+    finish = parse_time(args.finish.split('-'))
+
+    if args.commits:
+        commits_parser.log_commits(
+            binded_repos, args.out, start, finish, args.branch, args.forks_include
+        )
+    if args.pull_requests:
+        pull_requests_parser.log_pull_requests(
+            binded_repos,
+            args.out,
+            start,
+            finish,
+            args.forks_include,
+            args.pr_comments,
+        )
+    if args.issues:
+        issues_parser.log_issues(
+            binded_repos, args.out, start, finish, args.forks_include
+        )
+    if args.invites:
+        invites_parser.log_invitations(
+            binded_repos,
+            args.out,
+        )
+    if args.contributors:
+        contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
+    if args.workflow_runs:
+        workflow_runs_parser.log_workflow_runs(
+            binded_repos, args.out, args.forks_include
+        )
+    if args.wikis:
+        wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
+    if args.export_google_sheets:
+        export_sheets.write_data_to_table(
+            args.out, args.google_token, args.table_id, args.sheet_id
+        )
 
 
 def main():
@@ -145,57 +175,17 @@ def main():
     else:
         tokens = git_logger.get_tokens_from_file(args.tokens)
 
-    repositories = args.list
-    csv_name = args.out
-    path_drepo = args.download_repos
-    fork_flag = args.forks_include
-    log_pr_comments = args.pr_comments
+    repositories = git_logger.get_repos_from_file(args.list)
 
     try:
-        clients = git_logger.GitClients("github", tokens)
+        clients = git_logger.Clients(tokens, args.base_url)
+        binded_repos = git_logger.get_next_binded_repo(clients, repositories)
     except Exception as e:
-        print(e)
-        print(traceback.print_exc())
-    else:
-        client = RepositoryFactory.create_api("github", tokens[0])
-        working_repos = git_logger.get_next_repo(clients, repositories)
-        start = parse_time(args.start.split('-'))
-        finish = parse_time(args.finish.split('-'))
+        print(f"Failed to initialize any clients: {e}")
+        print(traceback.format_exc())
+        return
 
-        if args.commits:
-            commits_parser.log_commits(
-                client, working_repos, csv_name, start, finish, args.branch, fork_flag
-            )
-        if args.pull_requests:
-            pull_requests_parser.log_pull_requests(
-                client,
-                working_repos,
-                csv_name,
-                start,
-                finish,
-                fork_flag,
-                log_pr_comments,
-            )
-        if args.issues:
-            issues_parser.log_issues(
-                client, working_repos, csv_name, tokens[0], start, finish, fork_flag
-            )
-        if args.invites:
-            invites_parser.log_invitations(
-                client,
-                working_repos,
-                csv_name,
-            )
-        if args.wikis:
-            wikipars.wikiparser(clients, repositories, path_drepo, csv_name)
-        if args.contributors:
-            contributors_parser.log_contributors(
-                client, working_repos, csv_name, fork_flag
-            )
-        if args.export_google_sheets:
-            export_sheets.write_data_to_table(
-                csv_name, args.google_token, args.table_id, args.sheet_id
-            )
+    run(args, binded_repos, repositories)
 
 
 if __name__ == '__main__':
