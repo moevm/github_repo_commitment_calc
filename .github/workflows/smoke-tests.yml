@@ -72,10 +72,10 @@ jobs:
             HEADER="repository name,author name,author login,datetime,page,action,revision id,added lines,deleted lines"
             ;;
           --contributors)
-            HEADER="repository name,contributor login,number of commits,additions,deletions,branch"
+            HEADER="repository_name,login,name,email,url,permissions,total_commits,node_id,type,bio,site_admin"
             ;;
           --workflow_runs)
-            HEADER="repository name,workflow name,run id,status,conclusion,author login,author email,date and time,url,branch"
+            HEADER="repository_name,display_title,event,head_branch,head_sha,name,path,started_at,total_duration,conclusion,status,url"
             ;;
           *)
             echo "Unknown ARG: '${{ matrix.args }}'"
