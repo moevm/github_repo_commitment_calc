@@ -6,6 +6,7 @@ on:
 jobs:
   smoke-test:
     strategy:
+      fail-fast: false
       matrix:
         args:
           - "--invites"
@@ -51,7 +52,6 @@ jobs:
 
     - name: Check header in first line
       run: |
-        # Определяем HEADER в зависимости от matrix.args
         case "${{ matrix.args }}" in
           --invites)
             HEADER="repository name,author name,author login,author email,date and time,changed files,commit id,branch"
