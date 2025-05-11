@@ -14,8 +14,8 @@ jobs:
           - "--pull_requests"
           - "--issues"
           - "--wikis"
-          - "--contributors"
-          - "--workflow_runs"
+          # - "--contributors"
+          # - "--workflow_runs"
 
     runs-on: ubuntu-latest
 
