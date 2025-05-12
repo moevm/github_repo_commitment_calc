@@ -40,6 +40,7 @@ def log_invitations(
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
+        print(client, repo, token)
         logger.log_title(repo.name)
         try:
             log_repository_invitations(client, repo, csv_name)

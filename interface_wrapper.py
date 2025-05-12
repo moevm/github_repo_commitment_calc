@@ -207,7 +207,9 @@ class RepositoryFactory:
         errors = []
 
         try:
-            return GitHubRepoAPI(Github(auth=Auth.Token(token)))
+            client = GitHubRepoAPI(Github(auth=Auth.Token(token)))
+            if client.client:
+                return client
         except Exception as e:
             errors.append(f"GitHub login failed: {e}")
 
