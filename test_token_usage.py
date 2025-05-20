@@ -52,7 +52,7 @@ class TestTokenUsage(ParametrizedTestCase):
 
     @staticmethod
     def _get_rate_limit(clients: git_logger.Clients):
-        return [c['client'].get_rate_limiting()[0] for c in clients.clients]
+        return [client.get_rate_limiting()[0] for client in clients.clients]
 
     @staticmethod
     def _is_only_one_token_used(limit_start, limit_finish):
@@ -99,7 +99,7 @@ class TestTokenUsage(ParametrizedTestCase):
 
         for i in range(2):
             clients = git_logger.Clients(
-                "github", self._change_tokens_order(self.tokens, i)
+                self._change_tokens_order(self.tokens, i)
             )
             binded_repos = git_logger.get_next_binded_repo(clients, [self.repo])
 
