@@ -21,9 +21,8 @@ class logger:
             title_len, len(title) + MIN_SIDE_PADDING * 2 + SIDE_WHITE_SPACES * 2
         )
 
-        formatted =  f"{SIDE_WHITE_SPACES * ' ' + title + ' ' * SIDE_WHITE_SPACES:=^{final_len}}"
+        formatted = f"{SIDE_WHITE_SPACES * ' ' + title + ' ' * SIDE_WHITE_SPACES:=^{final_len}}"
         logging.info(formatted)
-
 
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
