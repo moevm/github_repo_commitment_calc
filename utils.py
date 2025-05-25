@@ -4,6 +4,13 @@ from datetime import datetime
 import pytz
 
 from constants import MIN_SIDE_PADDING, SIDE_WHITE_SPACES, TIMEZONE, TITLE_LEN
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
 class logger:
@@ -14,9 +21,9 @@ class logger:
             title_len, len(title) + MIN_SIDE_PADDING * 2 + SIDE_WHITE_SPACES * 2
         )
 
-        print(
-            f"{SIDE_WHITE_SPACES * ' ' + title + ' ' * SIDE_WHITE_SPACES:=^{final_len}}"
-        )
+        formatted =  f"{SIDE_WHITE_SPACES * ' ' + title + ' ' * SIDE_WHITE_SPACES:=^{final_len}}"
+        logging.info(formatted)
+
 
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
@@ -33,20 +40,19 @@ class logger:
 
     @staticmethod
     def log_to_stdout(info: dict):
-        print(info)
+        logging.info(f"{info}")
 
     @staticmethod
     def log_sep():
-        print("-" * TITLE_LEN)
+        logging.info("-" * TITLE_LEN)
 
     @staticmethod
     def log_error(error: str):
-        # или использовать logging, как в interface_wrapper
-        pass
+        logging.error(error)
 
     @staticmethod
     def log_warning(warning: str):
-        pass
+        logging.warning(warning)
 
 
 def parse_time(datetime_str) -> datetime:
