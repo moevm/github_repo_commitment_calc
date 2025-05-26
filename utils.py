@@ -26,6 +26,9 @@ class logger:
 
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
+        field_names = list(map(lambda x: x.replace('_', ' '), field_names))
+        if row is not None:
+            row = {k.replace('_', ' '): v for k, v in row.items()}
         if isinstance(row, dict):
             with open(csv_name, 'a', encoding='utf-8', newline='') as file:
                 writer = csv.DictWriter(file, fieldnames=field_names)
