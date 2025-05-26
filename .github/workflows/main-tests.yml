@@ -39,6 +39,11 @@ jobs:
         run: |
           python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List files after main.py (commits)
+        run: |
+          ls -l
+          cat output_commits.csv || echo 'output_commits.csv not found'
+
       - name: Compare output with reference CSV (commits)
         run: |
           python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
@@ -46,6 +51,11 @@ jobs:
       - name: Run main.py and save output (contributors)
         run: |
           python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List files after main.py (contributors)
+        run: |
+          ls -l
+          cat output_contributors.csv || echo 'output_contributors.csv not found'
 
       - name: Compare output with reference CSV (contributors)
         run: |
@@ -55,6 +65,11 @@ jobs:
         run: |
           python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List files after main.py (issues)
+        run: |
+          ls -l
+          cat output_issues.csv || echo 'output_issues.csv not found'
+
       - name: Compare output with reference CSV (issues)
         run: |
           python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
@@ -62,6 +77,11 @@ jobs:
       - name: Run main.py and save output (pulls)
         run: |
           python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List files after main.py (pulls)
+        run: |
+          ls -l
+          cat output_pulls.csv || echo 'output_pulls.csv not found'
 
       - name: Compare output with reference CSV (pulls)
         run: |
