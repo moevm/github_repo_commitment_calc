@@ -28,25 +28,25 @@ jobs:
       - name: Generate output_commits.csv
         run: python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compare CSV files (commits)
-        run: python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
-
       - name: Generate output_contributors.csv
         run: python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compare CSV files (contributors)
-        run: python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
 
       - name: Generate output_issues.csv
         run: python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compare CSV files (issues)
-        run: python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
-
       - name: Generate output_pulls.csv
         run: python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compare CSV files (pulls)
+      - name: Compare output_commits.csv
+        run: python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
+
+      - name: Compare output_contributors.csv
+        run: python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
+
+      - name: Compare output_issues.csv
+        run: python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
+
+      - name: Compare output_pulls.csv
         run: python compare_csv.py output_pulls.csv .github/workflows/reference_pulls.csv
 
       - name: Set environment variables
