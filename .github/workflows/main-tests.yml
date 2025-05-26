@@ -35,7 +35,7 @@ jobs:
         run: python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate output_pulls.csv
-        run: python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
+        run: python main.py -p -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output_commits.csv
         run: python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
@@ -115,7 +115,7 @@ jobs:
 
       - name: Run main.py and save output (pulls)
         run: |
-          python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
+          python main.py -p -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: List files after main.py (pulls)
         run: |
