@@ -22,6 +22,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate output_commits.csv
+        run: python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare CSV files (commits)
+        run: python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
+
+      - name: Generate output_contributors.csv
+        run: python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare CSV files (contributors)
+        run: python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
+
+      - name: Generate output_issues.csv
+        run: python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare CSV files (issues)
+        run: python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
+
+      - name: Generate output_pulls.csv
+        run: python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare CSV files (pulls)
+        run: python compare_csv.py output_pulls.csv .github/workflows/reference_pulls.csv
+
       - name: Set environment variables
         run: |
           echo "BASE_URL=https://api.github.com" >> $GITHUB_ENV
@@ -46,6 +70,10 @@ jobs:
 
       - name: Compare output with reference CSV (commits)
         run: |
+          if [ ! -f output_commits.csv ]; then
+            echo 'output_commits.csv not found, skipping compare.'
+            exit 1
+          fi
           python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
 
       - name: Run main.py and save output (contributors)
@@ -59,6 +87,10 @@ jobs:
 
       - name: Compare output with reference CSV (contributors)
         run: |
+          if [ ! -f output_contributors.csv ]; then
+            echo 'output_contributors.csv not found, skipping compare.'
+            exit 1
+          fi
           python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
 
       - name: Run main.py and save output (issues)
@@ -72,6 +104,10 @@ jobs:
 
       - name: Compare output with reference CSV (issues)
         run: |
+          if [ ! -f output_issues.csv ]; then
+            echo 'output_issues.csv not found, skipping compare.'
+            exit 1
+          fi
           python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
 
       - name: Run main.py and save output (pulls)
@@ -85,5 +121,9 @@ jobs:
 
       - name: Compare output with reference CSV (pulls)
         run: |
+          if [ ! -f output_pulls.csv ]; then
+            echo 'output_pulls.csv not found, skipping compare.'
+            exit 1
+          fi
           python compare_csv.py output_pulls.csv .github/workflows/reference_pulls.csv
 
