@@ -1,0 +1,56 @@
+name: Main Tests
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run main.py and save output (commits)
+        run: |
+          python main.py --repo isaacs/github --commits -o output_commits.csv
+
+      - name: Compare output with reference CSV (commits)
+        run: |
+          python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
+
+      - name: Run main.py and save output (contributors)
+        run: |
+          python main.py --repo isaacs/github --contributors -o output_contributors.csv
+
+      - name: Compare output with reference CSV (contributors)
+        run: |
+          python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
+
+      - name: Run main.py and save output (issues)
+        run: |
+          python main.py --repo isaacs/github --issues -o output_issues.csv
+
+      - name: Compare output with reference CSV (issues)
+        run: |
+          python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
+
+      - name: Run main.py and save output (pulls)
+        run: |
+          python main.py --repo isaacs/github --pulls -o output_pulls.csv
+
+      - name: Compare output with reference CSV (pulls)
+        run: |
+          python compare_csv.py output_pulls.csv .github/workflows/reference_pulls.csv
+
