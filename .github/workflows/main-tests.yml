@@ -22,9 +22,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Create test list file
+        run: echo "isaacs/github" > test_list.txt
+
       - name: Run main.py and save output (commits)
         run: |
-          python main.py --repo isaacs/github --commits -o output_commits.csv
+          python main.py --repo isaacs/github --commits -l test_list.txt -o output_commits.csv
 
       - name: Compare output with reference CSV (commits)
         run: |
@@ -32,7 +35,7 @@ jobs:
 
       - name: Run main.py and save output (contributors)
         run: |
-          python main.py --repo isaacs/github --contributors -o output_contributors.csv
+          python main.py --repo isaacs/github --contributors -l test_list.txt -o output_contributors.csv
 
       - name: Compare output with reference CSV (contributors)
         run: |
@@ -40,7 +43,7 @@ jobs:
 
       - name: Run main.py and save output (issues)
         run: |
-          python main.py --repo isaacs/github --issues -o output_issues.csv
+          python main.py --repo isaacs/github --issues -l test_list.txt -o output_issues.csv
 
       - name: Compare output with reference CSV (issues)
         run: |
@@ -48,7 +51,7 @@ jobs:
 
       - name: Run main.py and save output (pulls)
         run: |
-          python main.py --repo isaacs/github --pulls -o output_pulls.csv
+          python main.py --repo isaacs/github --pulls -l test_list.txt -o output_pulls.csv
 
       - name: Compare output with reference CSV (pulls)
         run: |
