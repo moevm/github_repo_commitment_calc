@@ -25,52 +25,8 @@ jobs:
       - name: Create test list file
         run: echo "isaacs/github" > test_list.txt
 
-      - name: Generate output_commits.csv
-        run: python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate output_contributors.csv
-        run: python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate output_issues.csv
-        run: python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate output_pulls.csv
-        run: python main.py -p -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compare output_commits.csv
-        run: python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
-
-      - name: Compare output_contributors.csv
-        run: python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
-
-      - name: Compare output_issues.csv
-        run: python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
-
-      - name: Compare output_pulls.csv
-        run: python compare_csv.py output_pulls.csv .github/workflows/reference_pulls.csv
-
-      - name: Set environment variables
-        run: |
-          echo "BASE_URL=https://api.github.com" >> $GITHUB_ENV
-          echo "BRANCH=master" >> $GITHUB_ENV
-          echo "START_DATE=2024-01-01" >> $GITHUB_ENV
-          echo "FINISH_DATE=2024-12-31" >> $GITHUB_ENV
-          echo "TABLE_ID=test_table_id" >> $GITHUB_ENV
-          echo "SHEET_ID=test_sheet_id" >> $GITHUB_ENV
-          echo "GOOGLE_TOKEN=test_google_token" >> $GITHUB_ENV
-
-      - name: Create test list file
-        run: echo "isaacs/github" > test_list.txt
-
       - name: Run main.py and save output (commits)
-        run: |
-          python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List files after main.py (commits)
-        run: |
-          ls -l
-          cat output_commits.csv || echo 'output_commits.csv not found'
-
+        run: python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
       - name: Compare output with reference CSV (commits)
         run: |
           if [ ! -f output_commits.csv ]; then
@@ -80,14 +36,7 @@ jobs:
           python compare_csv.py output_commits.csv .github/workflows/reference_commits.csv
 
       - name: Run main.py and save output (contributors)
-        run: |
-          python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List files after main.py (contributors)
-        run: |
-          ls -l
-          cat output_contributors.csv || echo 'output_contributors.csv not found'
-
+        run: python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
       - name: Compare output with reference CSV (contributors)
         run: |
           if [ ! -f output_contributors.csv ]; then
@@ -97,14 +46,7 @@ jobs:
           python compare_csv.py output_contributors.csv .github/workflows/reference_contributors.csv
 
       - name: Run main.py and save output (issues)
-        run: |
-          python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List files after main.py (issues)
-        run: |
-          ls -l
-          cat output_issues.csv || echo 'output_issues.csv not found'
-
+        run: python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
       - name: Compare output with reference CSV (issues)
         run: |
           if [ ! -f output_issues.csv ]; then
@@ -114,14 +56,7 @@ jobs:
           python compare_csv.py output_issues.csv .github/workflows/reference_issues.csv
 
       - name: Run main.py and save output (pulls)
-        run: |
-          python main.py -p -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
-
-      - name: List files after main.py (pulls)
-        run: |
-          ls -l
-          cat output_pulls.csv || echo 'output_pulls.csv not found'
-
+        run: python main.py -p -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
       - name: Compare output with reference CSV (pulls)
         run: |
           if [ ! -f output_pulls.csv ]; then
