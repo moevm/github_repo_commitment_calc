@@ -1,6 +1,7 @@
 import csv
 import sys
 
+
 def compare_csv_files(actual_path, expected_path):
     with open(actual_path, newline='', encoding='utf-8') as actual_file, \
          open(expected_path, newline='', encoding='utf-8') as expected_file:
@@ -32,6 +33,7 @@ def compare_csv_files(actual_path, expected_path):
             sys.exit(1)
         else:
             print('Файлы совпадают по общим столбцам.')
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
