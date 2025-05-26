@@ -22,12 +22,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Set environment variables
+        run: |
+          echo "BASE_URL=https://api.github.com" >> $GITHUB_ENV
+          echo "BRANCH=master" >> $GITHUB_ENV
+          echo "START_DATE=2024-01-01" >> $GITHUB_ENV
+          echo "FINISH_DATE=2024-12-31" >> $GITHUB_ENV
+          echo "TABLE_ID=test_table_id" >> $GITHUB_ENV
+          echo "SHEET_ID=test_sheet_id" >> $GITHUB_ENV
+          echo "GOOGLE_TOKEN=test_google_token" >> $GITHUB_ENV
+
       - name: Create test list file
         run: echo "isaacs/github" > test_list.txt
 
       - name: Run main.py and save output (commits)
         run: |
-          python main.py --repo isaacs/github --commits -l test_list.txt -o output_commits.csv
+          python main.py --repo isaacs/github --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (commits)
         run: |
@@ -35,7 +45,7 @@ jobs:
 
       - name: Run main.py and save output (contributors)
         run: |
-          python main.py --repo isaacs/github --contributors -l test_list.txt -o output_contributors.csv
+          python main.py --repo isaacs/github --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (contributors)
         run: |
@@ -43,7 +53,7 @@ jobs:
 
       - name: Run main.py and save output (issues)
         run: |
-          python main.py --repo isaacs/github --issues -l test_list.txt -o output_issues.csv
+          python main.py --repo isaacs/github --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (issues)
         run: |
@@ -51,7 +61,7 @@ jobs:
 
       - name: Run main.py and save output (pulls)
         run: |
-          python main.py --repo isaacs/github --pulls -l test_list.txt -o output_pulls.csv
+          python main.py --repo isaacs/github --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (pulls)
         run: |
