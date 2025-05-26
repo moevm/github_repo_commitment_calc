@@ -37,7 +37,7 @@ jobs:
 
       - name: Run main.py and save output (commits)
         run: |
-          python main.py --repo isaacs/github --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
+          python main.py --commits -l test_list.txt -o output_commits.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (commits)
         run: |
@@ -45,7 +45,7 @@ jobs:
 
       - name: Run main.py and save output (contributors)
         run: |
-          python main.py --repo isaacs/github --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
+          python main.py --contributors -l test_list.txt -o output_contributors.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (contributors)
         run: |
@@ -53,7 +53,7 @@ jobs:
 
       - name: Run main.py and save output (issues)
         run: |
-          python main.py --repo isaacs/github --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
+          python main.py --issues -l test_list.txt -o output_issues.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (issues)
         run: |
@@ -61,7 +61,7 @@ jobs:
 
       - name: Run main.py and save output (pulls)
         run: |
-          python main.py --repo isaacs/github --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
+          python main.py --pulls -l test_list.txt -o output_pulls.csv -t ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare output with reference CSV (pulls)
         run: |
