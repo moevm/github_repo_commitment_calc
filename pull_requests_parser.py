@@ -26,6 +26,11 @@ class PullRequestData:
     creator_login: str = ''
     creator_email: str = ''
     changed_files: str = ''
+    comment_body: str = ''
+    comment_created_at: str = ''
+    comment_author_name: str = ''
+    comment_author_login: str = ''
+    comment_author_email: str = ''
     merger_name: str | None = None
     merger_login: str | None = None
     merger_email: str | None = None
@@ -35,15 +40,6 @@ class PullRequestData:
     related_issues: str = ''
     labels: str = ''
     milestone: str = ''
-
-
-@dataclass(kw_only=True, frozen=True)
-class PullRequestDataWithComment(PullRequestData):
-    comment_body: str = ''
-    comment_created_at: str = ''
-    comment_author_name: str = ''
-    comment_author_login: str = ''
-    comment_author_email: str = ''
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -164,7 +160,7 @@ def log_repositories_pr(
             comments = client.get_comments(repository, pull)
             if comments:
                 for comment in comments:
-                    comment_data = PullRequestDataWithComment(
+                    comment_data = PullRequestData(
                         **asdict(pr_data),
                         comment_body=comment.body,
                         comment_created_at=str(comment.created_at),
@@ -196,7 +192,7 @@ def log_pull_requests(
     fork_flag: bool,
     log_comments=False,
 ):
-    info = asdict(PullRequestDataWithComment())
+    info = asdict(PullRequestData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
