@@ -161,12 +161,16 @@ def log_repositories_pr(
             if comments:
                 for comment in comments:
                     comment_data = PullRequestData(
-                        **asdict(pr_data),
-                        comment_body=comment.body,
-                        comment_created_at=str(comment.created_at),
-                        comment_author_name=comment.author.name,
-                        comment_author_login=comment.author.login,
-                        comment_author_email=nvl(comment.author.email),
+                        **(
+                            asdict(pr_data) |
+                            dict(
+                                comment_body=comment.body,
+                                comment_created_at=str(comment.created_at),
+                                comment_author_name=comment.author.name,
+                                comment_author_login=comment.author.login,
+                                comment_author_email=nvl(comment.author.email),
+                            )
+                        )
                     )
                     comment_data = asdict(comment_data)
 

@@ -13,7 +13,7 @@ from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)
-class IssueDataWithComment:
+class IssueData:
     repository_name: str = ''
     number: int = 0
     title: str = ''
@@ -187,7 +187,7 @@ def log_repository_issues(
         ):
             continue
 
-        issue_data = IssueDataWithComment(
+        issue_data = IssueData(
             repository_name=repository.name,
             number=issue._id,
             title=issue.title,
@@ -216,16 +216,20 @@ def log_repository_issues(
         sleep(TIMEDELTA)
 
 
-def log_issue_and_comments(csv_name, issue_data: IssueDataWithComment, comments):
+def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
     if comments:
         for comment in comments:
-            comment_data = IssueDataWithComment(
-                **asdict(issue_data),
-                comment_body=comment.body,
-                comment_created_at=str(comment.created_at),
-                comment_author_name=comment.author.username,
-                comment_author_login=comment.author.login,
-                comment_author_email=comment.author.email,
+            comment_data = IssueData(
+                **(
+                    asdict(issue_data) |
+                    dict(
+                        comment_body=comment.body,
+                        comment_created_at=str(comment.created_at),
+                        comment_author_name=comment.author.username,
+                        comment_author_login=comment.author.login,
+                        comment_author_email=comment.author.email,
+                    )
+                )
             )
             comment_data = asdict(comment_data)
 
@@ -244,7 +248,7 @@ def log_issues(
     finish: datetime,
     fork_flag: bool,
 ):
-    info = asdict(IssueDataWithComment())
+    info = asdict(IssueData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
