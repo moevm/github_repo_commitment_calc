@@ -23,23 +23,19 @@ class IssueData:
     creator_name: str = ''
     creator_login: str = ''
     creator_email: str = ''
-    closed_at: str | None = None
     closer_name: str | None = None
     closer_login: str | None = None
     closer_email: str | None = None
-    assignee_story: str = ''
-    connected_pull_requests: str = ''
-    labels: str = ''
-    milestone: str = ''
-
-
-@dataclass(kw_only=True, frozen=True)
-class IssueDataWithComment(IssueData):
+    closed_at: str | None = None
     comment_body: str = ''
     comment_created_at: str = ''
     comment_author_name: str = ''
     comment_author_login: str = ''
     comment_author_email: str = ''
+    assignee_story: str = ''
+    connected_pull_requests: str = ''
+    labels: str = ''
+    milestone: str = ''
 
 
 def get_connected_pulls(
@@ -223,13 +219,17 @@ def log_repository_issues(
 def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
     if comments:
         for comment in comments:
-            comment_data = IssueDataWithComment(
-                **asdict(issue_data),
-                comment_body=comment.body,
-                comment_created_at=str(comment.created_at),
-                comment_author_name=comment.author.username,
-                comment_author_login=comment.author.login,
-                comment_author_email=comment.author.email,
+            comment_data = IssueData(
+                **(
+                    asdict(issue_data) |
+                    dict(
+                        comment_body=comment.body,
+                        comment_created_at=str(comment.created_at),
+                        comment_author_name=comment.author.username,
+                        comment_author_login=comment.author.login,
+                        comment_author_email=comment.author.email,
+                    )
+                )
             )
             comment_data = asdict(comment_data)
 
@@ -248,7 +248,7 @@ def log_issues(
     finish: datetime,
     fork_flag: bool,
 ):
-    info = asdict(IssueDataWithComment())
+    info = asdict(IssueData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:

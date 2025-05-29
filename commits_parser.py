@@ -14,8 +14,9 @@ from utils import logger
 class CommitData:
     repository_name: str = ''
     author_name: str = ''
+    author_login: str = ''
     author_email: str = ''
-    datetime: str = ''
+    date_and_time: str = ''
     changed_files: str = ''
     commit_id: str = ''
     branch: str = ''
@@ -51,8 +52,9 @@ def log_repository_commits(
             commit_data = CommitData(
                 repository_name=repository.name,
                 author_name=commit.author.username,
+                author_login=commit.author.login or EMPTY_FIELD,
                 author_email=commit.author.email or EMPTY_FIELD,
-                datetime=commit.date.astimezone(pytz.timezone(TIMEZONE)).isoformat(),
+                date_and_time=commit.date.astimezone(pytz.timezone(TIMEZONE)).isoformat(),
                 changed_files=changed_files,
                 commit_id=commit._id,
                 branch=branch,
