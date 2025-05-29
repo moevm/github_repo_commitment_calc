@@ -90,6 +90,6 @@ jobs:
         else
           echo "::error::Header is invalid for ${{ matrix.args }}"
           echo "Expected: $HEADER"
-          echo "Actual: $FIRST_LINE"
+          echo "Actual:   $FIRST_LINE"
           exit 1
         fi

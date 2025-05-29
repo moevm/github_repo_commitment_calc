@@ -13,7 +13,7 @@ from utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)
-class IssueData:
+class IssueDataWithComment:
     repository_name: str = ''
     number: int = 0
     title: str = ''
@@ -23,23 +23,19 @@ class IssueData:
     creator_name: str = ''
     creator_login: str = ''
     creator_email: str = ''
-    closed_at: str | None = None
     closer_name: str | None = None
     closer_login: str | None = None
     closer_email: str | None = None
-    assignee_story: str = ''
-    connected_pull_requests: str = ''
-    labels: str = ''
-    milestone: str = ''
-
-
-@dataclass(kw_only=True, frozen=True)
-class IssueDataWithComment(IssueData):
+    closed_at: str | None = None
     comment_body: str = ''
     comment_created_at: str = ''
     comment_author_name: str = ''
     comment_author_login: str = ''
     comment_author_email: str = ''
+    assignee_story: str = ''
+    connected_pull_requests: str = ''
+    labels: str = ''
+    milestone: str = ''
 
 
 def get_connected_pulls(
@@ -191,7 +187,7 @@ def log_repository_issues(
         ):
             continue
 
-        issue_data = IssueData(
+        issue_data = IssueDataWithComment(
             repository_name=repository.name,
             number=issue._id,
             title=issue.title,
@@ -220,7 +216,7 @@ def log_repository_issues(
         sleep(TIMEDELTA)
 
 
-def log_issue_and_comments(csv_name, issue_data: IssueData, comments):
+def log_issue_and_comments(csv_name, issue_data: IssueDataWithComment, comments):
     if comments:
         for comment in comments:
             comment_data = IssueDataWithComment(
