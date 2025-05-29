@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from date_and_time import date_and_time
+from datetime import datetime
 from time import sleep
 from typing import Generator
 
@@ -72,8 +72,8 @@ def log_repository_commits(
 def log_commits(
     binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
-    start: date_and_time,
-    finish: date_and_time,
+    start: datetime,
+    finish: datetime,
     branch: str,
     fork_flag: bool,
 ):
