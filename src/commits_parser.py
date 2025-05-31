@@ -30,7 +30,7 @@ def log_repository_commits(
     branches = []
     match branch:
         case 'all':
-            for branch in repository.get_branches():
+            for branch in client.get_branches(repository):
                 branches.append(branch.name)
         case None:
             branches.append(repository.default_branch)
