@@ -71,4 +71,3 @@ def log_workflow_runs(
                 logger.log_title(f"FORKED: {forked_repo.name}")
                 log_repository_workflow_runs(client, forked_repo, csv_name)
                 sleep(TIMEDELTA)
-

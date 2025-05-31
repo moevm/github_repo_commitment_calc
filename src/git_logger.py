@@ -19,6 +19,7 @@ def login(token, base_url):
         client = RepositoryFactory.create_api(token, base_url)
         return client
     except Exception as e:
+        logging.error(e)
         logging.error(traceback.format_exc())
         return None
 
