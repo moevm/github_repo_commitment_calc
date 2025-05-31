@@ -200,26 +200,22 @@ def log_pull_requests(
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
-        try:
-            logger.log_title(repo.name)
-            log_repositories_pr(
-                client, repo, csv_name, token, start, finish, log_comments
-            )
-            if fork_flag:
-                forked_repos = client.get_repo(repo._id).get_forks()
-                for forked_repo in forked_repos:
-                    logger.log_title(f"FORKED: {forked_repo.name}")
-                    log_repositories_pr(
-                        client,
-                        forked_repo,
-                        csv_name,
-                        token,
-                        start,
-                        finish,
-                        log_comments,
-                    )
-                    sleep(TIMEDELTA)
-            sleep(TIMEDELTA)
-        except Exception as e:
-            print(e)
-            exit(1)
+        logger.log_title(repo.name)
+        log_repositories_pr(
+            client, repo, csv_name, token, start, finish, log_comments
+        )
+        if fork_flag:
+            forked_repos = client.get_repo(repo._id).get_forks()
+            for forked_repo in forked_repos:
+                logger.log_title(f"FORKED: {forked_repo.name}")
+                log_repositories_pr(
+                    client,
+                    forked_repo,
+                    csv_name,
+                    token,
+                    start,
+                    finish,
+                    log_comments,
+                )
+                sleep(TIMEDELTA)
+        sleep(TIMEDELTA)

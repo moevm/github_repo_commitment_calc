@@ -63,16 +63,11 @@ def log_workflow_runs(
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
-        try:
-            logger.log_title(repo.name)
-            log_repository_workflow_runs(client, repo, csv_name)
+        logger.log_title(repo.name)
+        log_repository_workflow_runs(client, repo, csv_name)
 
-            if fork_flag:
-                for forked_repo in client.get_forks(repo):
-                    logger.log_title(f"FORKED: {forked_repo.name}")
-                    log_repository_workflow_runs(client, forked_repo, csv_name)
-                    sleep(TIMEDELTA)
-
-        except Exception as e:
-            print(e)
-            exit(1)
+        if fork_flag:
+            for forked_repo in client.get_forks(repo):
+                logger.log_title(f"FORKED: {forked_repo.name}")
+                log_repository_workflow_runs(client, forked_repo, csv_name)
+                sleep(TIMEDELTA)

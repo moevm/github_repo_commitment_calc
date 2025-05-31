@@ -42,8 +42,4 @@ def log_invitations(
     for client, repo, token in binded_repos:
         print(client, repo, token)
         logger.log_title(repo.name)
-        try:
-            log_repository_invitations(client, repo, csv_name)
-        except Exception as e:
-            print(e)
-            exit(1)
+        log_repository_invitations(client, repo, csv_name)
