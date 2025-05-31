@@ -1,6 +1,6 @@
 from github import Github, GithubException
 
-from interface_wrapper import (
+from src.interface_wrapper import (
     Branch,
     Comment,
     Commit,

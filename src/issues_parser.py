@@ -6,10 +6,10 @@ from typing import Generator
 import pytz
 import requests
 
-from constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
-from git_logger import get_assignee_story
-from interface_wrapper import IRepositoryAPI, Repository
-from utils import logger
+from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
+from src.git_logger import get_assignee_story
+from src.interface_wrapper import IRepositoryAPI, Repository
+from src.utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)

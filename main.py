@@ -1,16 +1,16 @@
 import argparse
 import traceback
 
-import commits_parser
-import contributors_parser
-import export_sheets
-import git_logger
-import invites_parser
-import issues_parser
-import pull_requests_parser
-import wikipars
-import workflow_runs_parser
-from utils import parse_time
+from src import commits_parser
+from src import contributors_parser
+from src import export_sheets
+from src import git_logger
+from src import invites_parser
+from src import issues_parser
+from src import pull_requests_parser
+from src import wikipars
+from src import workflow_runs_parser
+from src.utils import parse_time
 
 
 def parse_args():

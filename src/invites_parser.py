@@ -2,9 +2,9 @@ from dataclasses import asdict, dataclass
 from time import sleep
 from typing import Generator
 
-from constants import TIMEDELTA
-from interface_wrapper import IRepositoryAPI, Repository
-from utils import logger
+from src.constants import TIMEDELTA
+from src.interface_wrapper import IRepositoryAPI, Repository
+from src.utils import logger
 
 
 @dataclass(kw_only=True, frozen=True)
