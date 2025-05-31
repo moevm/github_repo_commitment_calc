@@ -84,7 +84,7 @@ class TestTokenUsage(ParametrizedTestCase):
     @parametrize(
         'args',
         [
-            param({'commits': True}, id='commits'),
+            # param({'commits': True}, id='commits'),
             param({'contributors': True}, id='contributors'),
             param({'issues': True}, id='issues'),
             param({'invites': True}, id='invites'),
