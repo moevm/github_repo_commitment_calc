@@ -1,4 +1,6 @@
 from time import sleep
+import logging
+import traceback
 
 import requests
 
@@ -16,7 +18,8 @@ def login(token, base_url):
     try:
         client = RepositoryFactory.create_api(token, base_url)
         return client
-    except Exception:
+    except Exception as e:
+        logging.error(traceback.format_exc())
         return None
 
 

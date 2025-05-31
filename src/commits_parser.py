@@ -81,17 +81,13 @@ def log_commits(
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
-        try:
-            logger.log_title(repo.name)
-            log_repository_commits(client, repo, csv_name, start, finish, branch)
-            if fork_flag:
-                for forked_repo in client.get_forks(repo):
-                    logger.log_title(f"FORKED: {forked_repo.name}")
-                    log_repository_commits(
-                        client, forked_repo, csv_name, start, finish, branch
-                    )
-                    sleep(TIMEDELTA)
-            sleep(TIMEDELTA)
-        except Exception as e:
-            print(e)
-            exit(1)
+        logger.log_title(repo.name)
+        log_repository_commits(client, repo, csv_name, start, finish, branch)
+        if fork_flag:
+            for forked_repo in client.get_forks(repo):
+                logger.log_title(f"FORKED: {forked_repo.name}")
+                log_repository_commits(
+                    client, forked_repo, csv_name, start, finish, branch
+                )
+                sleep(TIMEDELTA)
+        sleep(TIMEDELTA)

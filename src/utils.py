@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from functools import wraps
 
 import pytz
 
@@ -73,3 +74,22 @@ def parse_time(datetime_str) -> datetime:
         second=start[5],
     )
     return start_datetime.astimezone(pytz.timezone(TIMEZONE))
+
+
+def log_exceptions(default_return=None, message=""):
+    """
+    Декоратор обработки ошибок для методов класса.
+    Логирует ошибки и возвращает default_return при исключении.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                class_name = args[0].__class__.__name__ if args else ""
+                logging.error(f"{message} {func.__name__}: {e}")
+                logging.error(traceback.format_exc())
+                return default_return
+        return wrapper
+    return decorator

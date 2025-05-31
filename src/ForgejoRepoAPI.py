@@ -1,9 +1,14 @@
 import base64
 import sys
+import traceback
+import logging
 
 import isodate
 from pyforgejo import PyforgejoApi
 
+from src.utils import (
+    log_exceptions,
+)
 from src.interface_wrapper import (
     Branch,
     Comment,
@@ -16,7 +21,6 @@ from src.interface_wrapper import (
     Repository,
     User,
     WikiPage,
-    logging,
     WorkflowRun
 )
 
@@ -38,26 +42,22 @@ class ForgejoRepoAPI(IRepositoryAPI):
             _id=user.id,
         )
 
+    @log_exceptions(default_return=None, message="Failed to get repository")
     def get_repository(self, id: str) -> Repository | None:
-        try:
-            repo = self.client.repository.repo_get(
-                owner=id.split('/')[0], repo=id.split('/')[1]
-            )
-
-            if not repo:
-                logging.error(f"Failed to get repository {id} from Forgejo.")
-                return None
-
-            return Repository(
-                _id=repo.full_name,
-                name=repo.name,
-                url=repo.html_url,
-                default_branch=Branch(name=repo.default_branch, last_commit=None),
-                owner=self.get_user_data(repo.owner),
-            )
-        except Exception as e:
-            logging.error(f"Failed to get repository {id} from Forgejo: {e}")
+        repo = self.client.repository.repo_get(
+            owner=id.split('/')[0], repo=id.split('/')[1]
+        )
+        if not repo:
+            logging.error(f"Failed to get repository {id} from Forgejo.")
             return None
+
+        return Repository(
+            _id=repo.full_name,
+            name=repo.name,
+            url=repo.html_url,
+            default_branch=Branch(name=repo.default_branch, last_commit=None),
+            owner=self.get_user_data(repo.owner),
+        )
 
     def get_collaborator_permission(self, repo: Repository, user: User) -> str:
         try:
@@ -66,266 +66,215 @@ class ForgejoRepoAPI(IRepositoryAPI):
             )
             return permission.permission
 
-        except Exception as e:
-            if ("401" in str(e)) or ("403" in str(e)):
-                logging.error(
-                    f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}."
-                )
-                return f"Permission error: Only admins or repo admins can view permissions for others in {repo.name}."
-            logging.error(
-                f"Failed to get collaborator permission for {user.login} in {repo.name}: {e}"
-            )
-            return "Error"
+    @log_exceptions(default_return="Error", message="Failed to get collaborator permission")
+    def get_collaborator_permission(self, repo: Repository, user: User) -> str:
+        permission = self.client.repository.repo_get_repo_permissions(
+            owner=repo.owner.login, repo=repo.name, collaborator=user.login
+        )
+        return permission.permission
 
+    @log_exceptions(default_return=[], message="Failed to get commits from Forgejo")
     def get_commits(self, repo: Repository, files: bool = True) -> list[Commit]:
-        try:
-            commits = self.client.repository.repo_get_all_commits(
-                repo.owner.login, repo.name
+        commits = self.client.repository.repo_get_all_commits(
+            repo.owner.login, repo.name
+        )
+        return [
+            Commit(
+                _id=c.sha,
+                message=c.commit.message,
+                author=self.get_user_data(c.author),
+                date=isodate.parse_datetime(c.commit.author.date),
+                files=(
+                    [f.filename for f in getattr(c, "files", [])] if files else None
+                ),
+                additions=None,  # TODO
+                deletions=None,  # TODO
             )
-            return [
-                Commit(
-                    _id=c.sha,
-                    message=c.commit.message,
-                    author=self.get_user_data(c.author),
-                    date=isodate.parse_datetime(c.commit.author.date),
-                    files=(
-                        [f.filename for f in getattr(c, "files", [])] if files else None
-                    ),
-                    additions=None,  # TODO
-                    deletions=None,  # TODO
-                )
-                for c in commits
-            ]
-        except Exception as e:
-            logging.error(
-                f"Failed to get commits from Forgejo for repo {repo.name}: {e}"
-            )
-        return []
+            for c in commits
+        ]
 
+    @log_exceptions(default_return=[], message="Failed to get contributors from Forgejo")
     def get_contributors(self, repo: Repository) -> list[Contributor]:
-        try:
-            commits = self.client.repository.repo_get_all_commits(
-                repo.owner.login, repo.name
-            )
-            contributors = {
-                c.author.login: c.author.email or "" for c in commits if c.author
-            }
-            return [Contributor(login, email) for login, email in contributors.items()]
-        except Exception as e:
-            logging.error(
-                f"Failed to get contributors from Forgejo for repo {repo.name}: {e}"
-            )
-            return []
+        commits = self.client.repository.repo_get_all_commits(
+            repo.owner.login, repo.name
+        )
+        contributors = {
+            c.author.login: c.author.email or "" for c in commits if c.author
+        }
+        return [Contributor(login, email) for login, email in contributors.items()]
 
+    @log_exceptions(default_return=[], message="Failed to get issues from Forgejo")
     def get_issues(self, repo: Repository) -> list[Issue]:
-        try:
-            issues = self.client.issue.list_issues(repo.owner.login, repo.name)
-            return [
-                Issue(
-                    _id=i.id,
-                    title=i.title,
-                    state=i.state,
-                    created_at=i.created_at,
-                    closed_at=i.closed_at if i.state == 'closed' else None,
-                    closed_by=(
-                        self.get_user_data(i.closed_by)
-                        if hasattr(i, 'closed_by') and i.closed_by
-                        else None
-                    ),
-                    body=i.body,
-                    user=self.get_user_data(i.user),
-                    labels=[label.name for label in i.labels],
-                    milestone=i.milestone.title if i.milestone else None,
-                )
-                for i in issues
-            ]
-        except Exception as e:
-            logging.error(
-                f"Failed to get issues from Forgejo for repo {repo.name}: {e}"
+        issues = self.client.issue.list_issues(repo.owner.login, repo.name)
+        return [
+            Issue(
+                _id=i.id,
+                title=i.title,
+                state=i.state,
+                created_at=i.created_at,
+                closed_at=i.closed_at if i.state == 'closed' else None,
+                closed_by=(
+                    self.get_user_data(i.closed_by)
+                    if hasattr(i, 'closed_by') and i.closed_by
+                    else None
+                ),
+                body=i.body,
+                user=self.get_user_data(i.user),
+                labels=[label.name for label in i.labels],
+                milestone=i.milestone.title if i.milestone else None,
             )
-            return []
+            for i in issues
+        ]
 
+    @log_exceptions(default_return=[], message="Failed to get pull requests from Forgejo")
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
-        try:
-            pulls = self.client.repository.repo_list_pull_requests(
-                repo.owner.login, repo.name
+        pulls = self.client.repository.repo_list_pull_requests(
+            repo.owner.login, repo.name
+        )
+        return [
+            PullRequest(
+                _id=p.number,
+                title=p.title,
+                author=self.get_user_data(p.user),
+                state=p.state,
+                created_at=p.created_at,
+                head_label=p.head.ref,
+                base_label=p.base.ref,
+                head_ref=p.head.ref,
+                base_ref=p.base.ref,
+                merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
+                files=[],  # TODO если возможно
+                issue_url=None,  # TODO если возможно
+                labels=[label.name for label in p.labels] if p.labels else [],
+                milestone=p.milestone.title if p.milestone else None,
             )
-            return [
-                PullRequest(
-                    _id=p.number,
-                    title=p.title,
-                    author=self.get_user_data(p.user),
-                    state=p.state,
-                    created_at=p.created_at,
-                    head_label=p.head.ref,
-                    base_label=p.base.ref,
-                    head_ref=p.head.ref,
-                    base_ref=p.base.ref,
-                    merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
-                    files=[],  # TODO если возможно
-                    issue_url=None,  # TODO если возможно
-                    labels=[label.name for label in p.labels] if p.labels else [],
-                    milestone=p.milestone.title if p.milestone else None,
-                )
-                for p in pulls
-            ]
-        except Exception as e:
-            logging.error(
-                f"Failed to get pull requests from Forgejo for repo {repo.name}: {e}"
-            )
-            return []
+            for p in pulls
+        ]
 
+    @log_exceptions(default_return=[], message="Failed to get branches from Forgejo")
     def get_branches(self, repo: Repository) -> list[Branch]:
-        try:
-            branches = self.client.repository.repo_list_branches(
-                repo.owner.login, repo.name
-            )
-            result = []
-
-            for branch in branches:
-                commit = branch.commit
-
-                author = commit.author
-                contributor = Contributor(
-                    username=author.username if author else "unknown",
-                    email=author.email if author and author.email else "",
-                )
-
-                commit_details = self.client.repository.repo_get_single_commit(
-                    repo.owner.login, repo.name, commit.id
-                )
-                files = [file.filename for file in getattr(commit_details, "files", [])]
-
-                commit_obj = Commit(
-                    _id=commit.id,
-                    message=commit.message,
-                    author=contributor,
-                    date=commit.timestamp,
-                    files=files,
-                )
-
-                result.append(Branch(name=branch.name, last_commit=commit_obj))
-
-            return result
-
-        except Exception as e:
-            logging.error(
-                f"Failed to get branches from Forgejo for repo {repo.name}: {e}"
-            )
-            return []
-
-    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
-        try:
-            pages = self.client.repository.repo_get_wiki_pages(
-                repo.owner.login, repo.name
-            )
-            result = []
-
-            for page in pages:
-                page_details = self.client.repository.repo_get_wiki_page(
-                    repo.owner.login, repo.name, page.title
-                )
-
-                wiki_page = WikiPage(
-                    title=page_details.title,
-                    content=base64.b64decode(page_details.content_base_64).decode(
-                        'utf-8'
-                    ),
-                )
-                result.append(wiki_page)
-
-            return result
-
-        except Exception as e:
-            logging.error(
-                f"Failed to get wiki pages from Forgejo for repo {repo.name}: {e}"
-            )
-            return []
-
-    def get_forks(self, repo: Repository) -> list[Repository]:
-        try:
-            forks = self.client.repository.list_forks(repo.owner.login, repo.name)
-            result = []
-
-            for fork in forks:
-                default_branch = Branch(name=fork.default_branch, last_commit=None)
-                owner = fork.owner
-
-                result.append(
-                    Repository(
-                        _id=fork.full_name,
-                        name=fork.name,
-                        url=fork.html_url,
-                        default_branch=default_branch,
-                        owner=owner,
-                    )
-                )
-            return result
-
-        except Exception as e:
-            logging.error(f"Failed to get forks from Forgejo for repo {repo.name}: {e}")
-            return []
-
-    def get_comments(self, repo, obj) -> list[Comment]:
+        branches = self.client.repository.repo_list_branches(
+            repo.owner.login, repo.name
+        )
         result = []
-        try:
-            if isinstance(obj, Issue):
-                comments = self.client.issue.get_repo_comments(
-                    repo.owner.login, repo.name
-                )
-                result = [
-                    Comment(
-                        body=c.body,
-                        created_at=c.created_at,
-                        author=self.get_user_data(c.user),
-                    )
-                    for c in comments
-                ]
 
-            elif isinstance(obj, PullRequest):
-                comments = self.client.repository.repo_get_pull_review_comments(
-                    repo.owner.login, repo.name, obj._id, 100000
-                )  # нет id комментария
-                result = [
-                    Comment(
-                        body=c.body,
-                        created_at=c.created_at,
-                        author=self.get_user_data(c.user),
-                    )
-                    for c in comments
-                ]
+        for branch in branches:
+            commit = branch.commit
 
-        except Exception as e:
-            logging.error(f"Failed to get comments for repo {repo.name}: {e}")
+            author = commit.author
+            contributor = Contributor(
+                username=author.username if author else "unknown",
+                email=author.email if author and author.email else "",
+            )
+
+            commit_details = self.client.repository.repo_get_single_commit(
+                repo.owner.login, repo.name, commit.id
+            )
+            files = [file.filename for file in getattr(commit_details, "files", [])]
+
+            commit_obj = Commit(
+                _id=commit.id,
+                message=commit.message,
+                author=contributor,
+                date=commit.timestamp,
+                files=files,
+            )
+
+            result.append(Branch(name=branch.name, last_commit=commit_obj))
 
         return result
 
+    @log_exceptions(default_return=[], message="Failed to get wiki pages from Forgejo")
+    def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
+        pages = self.client.repository.repo_get_wiki_pages(
+            repo.owner.login, repo.name
+        )
+        result = []
+
+        for page in pages:
+            page_details = self.client.repository.repo_get_wiki_page(
+                repo.owner.login, repo.name, page.title
+            )
+
+            wiki_page = WikiPage(
+                title=page_details.title,
+                content=base64.b64decode(page_details.content_base_64).decode('utf-8'),
+            )
+            result.append(wiki_page)
+
+        return result
+
+    @log_exceptions(default_return=[], message="Failed to get forks from Forgejo")
+    def get_forks(self, repo: Repository) -> list[Repository]:
+        forks = self.client.repository.list_forks(repo.owner.login, repo.name)
+        result = []
+
+        for fork in forks:
+            default_branch = Branch(name=fork.default_branch, last_commit=None)
+            owner = fork.owner
+
+            result.append(
+                Repository(
+                    _id=fork.full_name,
+                    name=fork.name,
+                    url=fork.html_url,
+                    default_branch=default_branch,
+                    owner=owner,
+                )
+            )
+        return result
+
+    @log_exceptions(default_return=[], message="Failed to get comments for Forgejo")
+    def get_comments(self, repo, obj) -> list[Comment]:
+        result = []
+        if isinstance(obj, Issue):
+            comments = self.client.issue.get_repo_comments(
+                repo.owner.login, repo.name
+            )
+            result = [
+                Comment(
+                    body=c.body,
+                    created_at=c.created_at,
+                    author=self.get_user_data(c.user),
+                )
+                for c in comments
+            ]
+
+        elif isinstance(obj, PullRequest):
+            comments = self.client.repository.repo_get_pull_review_comments(
+                repo.owner.login, repo.name, obj._id, 100000
+            )  # нет id комментария
+            result = [
+                Comment(
+                    body=c.body,
+                    created_at=c.created_at,
+                    author=self.get_user_data(c.user),
+                )
+                for c in comments
+            ]
+        return result
+
+    @log_exceptions(default_return=[], message="Failed to simulate invites for Forgejo")
     def get_invites(self, repo: Repository, users: list[User] = None) -> list[Invite]:
         if users is None:
             return []
+        collaborators = self.client.repository.repo_list_collaborators(
+            owner=repo.owner.login, repo=repo.name
+        )
+        collab_logins = {c.login for c in collaborators}
 
-        try:
-            collaborators = self.client.repository.repo_list_collaborators(
-                owner=repo.owner.login, repo=repo.name
-            )
-            collab_logins = {c.login for c in collaborators}
-
-            invites = []
-            for user in users:
-                if user.login not in collab_logins:
-                    invites.append(
-                        Invite(
-                            _id=0,
-                            invitee=user,
-                            created_at=None,
-                            html_url=user.html_url,
-                        )
+        invites = []
+        for user in users:
+            if user.login not in collab_logins:
+                invites.append(
+                    Invite(
+                        _id=0,
+                        invitee=user,
+                        created_at=None,
+                        html_url=user.html_url,
                     )
-            return invites
-
-        except Exception as e:
-            logging.error(f"Failed to simulate invites for Forgejo repo {repo.name}: {e}")
-            return []
+                )
+        return invites
 
     def get_rate_limiting(self) -> tuple[int, int]:
         return sys.maxsize, sys.maxsize
