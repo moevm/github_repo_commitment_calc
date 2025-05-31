@@ -4,7 +4,7 @@ import sys
 import isodate
 from pyforgejo import PyforgejoApi
 
-from interface_wrapper import (
+from src.interface_wrapper import (
     Branch,
     Comment,
     Commit,
