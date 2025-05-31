@@ -59,13 +59,6 @@ class ForgejoRepoAPI(IRepositoryAPI):
             owner=self.get_user_data(repo.owner),
         )
 
-    def get_collaborator_permission(self, repo: Repository, user: User) -> str:
-        try:
-            permission = self.client.repository.repo_get_repo_permissions(
-                owner=repo.owner.login, repo=repo.name, collaborator=user.login
-            )
-            return permission.permission
-
     @log_exceptions(default_return="Error", message="Failed to get collaborator permission")
     def get_collaborator_permission(self, repo: Repository, user: User) -> str:
         permission = self.client.repository.repo_get_repo_permissions(
