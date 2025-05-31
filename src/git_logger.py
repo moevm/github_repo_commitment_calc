@@ -9,7 +9,6 @@ from src.interface_wrapper import (
 )
 from src.constants import (
     TIMEDELTA,
-    TIMEZONE,
 )
 
 
