@@ -3,8 +3,8 @@ import time
 
 from git import Repo, exc
 
-from constants import WIKI_FIELDNAMES
-from utils import logger
+from src.constants import WIKI_FIELDNAMES
+from src.utils import logger
 
 
 def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):

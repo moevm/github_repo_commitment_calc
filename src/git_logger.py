@@ -1,13 +1,15 @@
-from interface_wrapper import (
+from time import sleep
+
+import requests
+
+from src.GitHubRepoAPI import GitHubRepoAPI
+from src.interface_wrapper import (
     RepositoryFactory,
     IRepositoryAPI
 )
-from GitHubRepoAPI import GitHubRepoAPI
-from time import sleep
-import requests
-
-TIMEDELTA = 0.05
-TIMEZONE = 'Europe/Moscow'
+from src.constants import (
+    TIMEDELTA,
+)
 
 
 def login(token, base_url):

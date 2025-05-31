@@ -4,7 +4,7 @@ import unittest
 
 from unittest_parametrize import ParametrizedTestCase, param, parametrize
 
-import git_logger
+from src import git_logger
 from main import run
 
 

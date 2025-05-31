@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytz
 
-from constants import MIN_SIDE_PADDING, SIDE_WHITE_SPACES, TIMEZONE, TITLE_LEN
+from src.constants import MIN_SIDE_PADDING, SIDE_WHITE_SPACES, TIMEZONE, TITLE_LEN
 import logging
 
 
