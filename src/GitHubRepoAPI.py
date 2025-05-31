@@ -1,4 +1,4 @@
-from github import Github, GithubException
+from github import Github
 
 from src.utils import (
     log_exceptions,
@@ -15,7 +15,6 @@ from src.interface_wrapper import (
     Repository,
     User,
     WikiPage,
-    logging,
     WorkflowRun,
 )
 
@@ -96,7 +95,6 @@ class GitHubRepoAPI(IRepositoryAPI):
             )
             for i in issues
         ]
-
 
     @log_exceptions(default_return=[], message="Failed to get pull requests from GitHub")
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:

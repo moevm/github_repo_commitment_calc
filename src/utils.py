@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from functools import wraps
+import traceback
 
 import pytz
 
@@ -88,6 +89,7 @@ def log_exceptions(default_return=None, message=""):
                 return func(*args, **kwargs)
             except Exception as e:
                 class_name = args[0].__class__.__name__ if args else ""
+                logging.error(f"{class_name=}")
                 logging.error(f"{message} {func.__name__}: {e}")
                 logging.error(traceback.format_exc())
                 return default_return

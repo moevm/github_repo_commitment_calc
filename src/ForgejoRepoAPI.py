@@ -1,6 +1,5 @@
 import base64
 import sys
-import traceback
 import logging
 
 import isodate
