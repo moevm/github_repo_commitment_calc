@@ -24,7 +24,7 @@ class GitHubRepoAPI(IRepositoryAPI):
         self.client = self._client_validation(client)
 
     @staticmethod
-    @log_exceptions(default_return=None, message="Github: Connect: user could not be authenticated. Please try again.")
+    @log_exceptions(default_return=None, message="Github: Connect: user could not be authenticated. Please try again.", print_stacktrace=False)
     def _client_validation(client: Github) -> Github | None:
         client.get_user().login
         return client

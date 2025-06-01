@@ -74,7 +74,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
             Commit(
                 _id=c.sha,
                 message=c.commit.message,
-                author=self.get_user_data(c.author),
+                author=self.get_user_data(c.author) if c.author else None,
                 date=isodate.parse_datetime(c.commit.author.date),
                 files=(
                     [f.filename for f in getattr(c, "files", [])] if files else None

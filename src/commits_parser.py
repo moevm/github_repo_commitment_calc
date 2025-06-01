@@ -33,7 +33,7 @@ def log_repository_commits(
             for branch in client.get_branches(repository):
                 branches.append(branch.name)
         case None:
-            branches.append(repository.default_branch)
+            branches.append(repository.default_branch.name)
         case _:
             branches.append(branch)
 
@@ -51,9 +51,9 @@ def log_repository_commits(
             changed_files = changed_files[:GOOGLE_MAX_CELL_LEN]
             commit_data = CommitData(
                 repository_name=repository.name,
-                author_name=commit.author.username,
-                author_login=commit.author.login or EMPTY_FIELD,
-                author_email=commit.author.email or EMPTY_FIELD,
+                author_name=commit.author.username if commit.author else EMPTY_FIELD,
+                author_login=commit.author.login if commit.author else EMPTY_FIELD,
+                author_email=commit.author.email if commit.author else EMPTY_FIELD,
                 date_and_time=commit.date.astimezone(pytz.timezone(TIMEZONE)).isoformat(),
                 changed_files=changed_files,
                 commit_id=commit._id,

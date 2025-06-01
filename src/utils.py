@@ -77,7 +77,7 @@ def parse_time(datetime_str) -> datetime:
     return start_datetime.astimezone(pytz.timezone(TIMEZONE))
 
 
-def log_exceptions(default_return=None, message=""):
+def log_exceptions(default_return=None, message="", print_stacktrace=True):
     """
     Декоратор обработки ошибок для методов класса.
     Логирует ошибки и возвращает default_return при исключении.
@@ -91,7 +91,8 @@ def log_exceptions(default_return=None, message=""):
                 class_name = args[0].__class__.__name__ if args else ""
                 logging.error(f"{class_name=}")
                 logging.error(f"{message} {func.__name__}: {e}")
-                logging.error(traceback.format_exc())
+                if print_stacktrace:
+                    logging.error(traceback.format_exc())
                 return default_return
         return wrapper
     return decorator
