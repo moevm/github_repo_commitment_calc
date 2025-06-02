@@ -50,7 +50,9 @@ class Clients:
                 self.token_map[client] = token
 
         if not self.clients:
-            raise Exception("No valid tokens for either GitHub or Forgejo")
+            if base_url:
+                raise Exception("No valid tokens for either GitHub or Forgejo")
+            raise Exception("Make sure that base_url is provided")
 
     def _get_next_client(self) -> tuple[IRepositoryAPI, str]:
         client = None
