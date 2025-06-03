@@ -88,39 +88,36 @@ def get_next_binded_repo(clients: Clients, repositories: list[str]):
 def get_assignee_story(git_object, client, token, repository):
     assignee_result = ""
 
-    try:
-        repo_owner = repository.owner.login
-        repo_name = repository.name
-        issue_index = git_object._id  # Для pull request и issue одинаково
+    repo_owner = repository.owner.login
+    repo_name = repository.name
+    # Для pull request и issue одинаково
+    issue_index = (
+        getattr(git_object, "number", None)
+        or getattr(git_object, "index", None)
+        or getattr(git_object, "_id", None)
+    )
 
-        base_url = client.get_base_url().rstrip('/')
+    base_url = client.get_base_url().rstrip('/')
 
-        url = f"{base_url}/repos/{repo_owner}/{repo_name}/issues/{issue_index}/timeline"
-        headers = {
-            "Authorization": f"Bearer {token}" if client is GitHubRepoAPI else f"token {token}",
-            "Accept": "application/json"
-        }
+    url = f"{base_url}/repos/{repo_owner}/{repo_name}/issues/{issue_index}/timeline"
+    headers = {
+        "Authorization": f"Bearer {token}" if client is GitHubRepoAPI else f"token {token}",
+        "Accept": "application/json"
+    }
 
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            raise Exception(f"Failed to fetch issue timeline: {response.status_code}, {response.text}")
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch issue timeline: {response.status_code}, {response.text}")
 
-        events = response.json()
+    events = response.json()
 
-        for event in events:
-            if event.get('event') in ["assigned", "unassigned"]:
-                date = event.get('created_at')
-                assigner = event.get('actor', {}).get('login', 'unknown')
-                assignee = event.get('assignee', {}).get('login', 'unknown')
-
-                assignee_result += f"{date}: {assigner} -"
-                if event['event'] == "unassigned":
-                    assignee_result += "/"
-                assignee_result += f"> {assignee}; "
-
-                sleep(TIMEDELTA)
-
-    except Exception as e:
-        print(f"get_assignee_story(): error {e}")
+    results = [
+        f"{event.get('created_at')}: {event.get('actor', {}).get('login', 'unknown')} -"
+        + ("/" if event.get('event') == "unassigned" else "")
+        + f"> {event.get('assignee', {}).get('login', 'unknown')}; "
+        for event in events
+        if event.get('event') in ["assigned", "unassigned"]
+    ]
+    assignee_result = ''.join(results)
 
     return assignee_result

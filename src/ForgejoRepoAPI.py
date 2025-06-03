@@ -275,7 +275,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
         return []
 
     def get_base_url(self) -> str:
-        return self.client.base_url
+        return self.client._client_wrapper.get_base_url()
 
 
 # Точка входа для тестирования
