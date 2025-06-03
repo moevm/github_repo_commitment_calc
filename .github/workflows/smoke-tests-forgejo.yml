@@ -41,7 +41,7 @@ jobs:
 
     - name: Run test
       run: |
-        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_FORGEJO }} --list list.txt --out out.csv --branch master
+        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_FORGEJO }} --base_url https://codeberg.org/api/v1 --list list.txt --out out.csv --branch master
 
     - name: Check if out.csv exists
       run: ls out.csv
