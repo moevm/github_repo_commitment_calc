@@ -90,8 +90,12 @@ def get_assignee_story(git_object, client, token, repository):
 
     repo_owner = repository.owner.login
     repo_name = repository.name
-    issue_index = getattr(git_object, "number", None) or getattr(git_object, "index", None) or getattr(git_object, "_id", None)  # Для pull request и issue одинаково
-    print(issue_index)
+    # Для pull request и issue одинаково
+    issue_index = (
+        getattr(git_object, "number", None)
+        or getattr(git_object, "index", None)
+        or getattr(git_object, "_id", None)
+    )
 
     base_url = client.get_base_url().rstrip('/')
 
@@ -111,7 +115,7 @@ def get_assignee_story(git_object, client, token, repository):
         f"{event.get('created_at')}: {event.get('actor', {}).get('login', 'unknown')} -"
         + ("/" if event.get('event') == "unassigned" else "")
         + f"> {event.get('assignee', {}).get('login', 'unknown')}; "
-        for event in events 
+        for event in events
         if event.get('event') in ["assigned", "unassigned"]
     ]
     assignee_result = ''.join(results)
