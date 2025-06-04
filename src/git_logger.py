@@ -10,6 +10,7 @@ from src.interface_wrapper import (
     IRepositoryAPI
 )
 from src.constants import (
+    EMPTY_FIELD,
     TIMEDELTA,
 )
 
@@ -100,6 +101,7 @@ def get_assignee_story(git_object, client, token, repository):
     base_url = client.get_base_url().rstrip('/')
 
     url = f"{base_url}/repos/{repo_owner}/{repo_name}/issues/{issue_index}/timeline"
+    logging.info(url)
     headers = {
         "Authorization": f"Bearer {token}" if client is GitHubRepoAPI else f"token {token}",
         "Accept": "application/json"
@@ -110,13 +112,15 @@ def get_assignee_story(git_object, client, token, repository):
         raise Exception(f"Failed to fetch issue timeline: {response.status_code}, {response.text}")
 
     events = response.json()
+    if events is None:
+        return EMPTY_FIELD
 
     results = [
         f"{event.get('created_at')}: {event.get('actor', {}).get('login', 'unknown')} -"
         + ("/" if event.get('event') == "unassigned" else "")
         + f"> {event.get('assignee', {}).get('login', 'unknown')}; "
         for event in events
-        if event.get('event') in ["assigned", "unassigned"]
+        if event and event.get('event') in ["assigned", "unassigned"]
     ]
     assignee_result = ''.join(results)
 

@@ -170,7 +170,7 @@ def get_connected_pulls(
 
 
 def log_repository_issues(
-    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish
+    client: IRepositoryAPI, repository: Repository, csv_name, token, start, finish, base_url,
 ):
     def nvl(val):
         return val or EMPTY_FIELD
@@ -203,7 +203,7 @@ def log_repository_issues(
             closer_email=issue.closed_by.email if issue.closed_by else None,
             assignee_story=get_assignee_story(issue, client, token, repository),
             connected_pull_requests=(
-                get_connected_pulls(token, issue._id, repository.owner, repository.name)
+                get_connected_pulls(token, issue._id, repository.owner, repository.name, base_url)
                 if issue._id is not None
                 else EMPTY_FIELD
             ),
@@ -247,19 +247,20 @@ def log_issues(
     start: datetime,
     finish: datetime,
     fork_flag: bool,
+    base_url: str = None,
 ):
     info = asdict(IssueData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
         logger.log_title(repo.name)
-        log_repository_issues(client, repo, csv_name, token, start, finish)
+        log_repository_issues(client, repo, csv_name, token, start, finish, base_url)
         if fork_flag:
             forked_repos = client.get_forks(repo)
             for forked_repo in forked_repos:
                 logger.log_title(f"FORKED: {forked_repo.name}")
                 log_repository_issues(
-                    client, forked_repo, csv_name, token, start, finish
+                    client, forked_repo, csv_name, token, start, finish, base_url,
                 )
                 sleep(TIMEDELTA)
         sleep(TIMEDELTA)

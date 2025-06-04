@@ -101,6 +101,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
         return [
             Issue(
                 _id=i.id,
+                number=i.number,
                 title=i.title,
                 state=i.state,
                 created_at=i.created_at,

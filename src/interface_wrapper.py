@@ -61,6 +61,7 @@ class Repository:
 @dataclass
 class Issue:
     _id: int
+    number: int
     title: str
     state: str
     created_at: datetime

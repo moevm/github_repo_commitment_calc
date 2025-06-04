@@ -146,7 +146,7 @@ def run(args, binded_repos, repos_for_wiki=None):
         )
     if args.issues:
         issues_parser.log_issues(
-            binded_repos, args.out, start, finish, args.forks_include
+            binded_repos, args.out, start, finish, args.forks_include, args.base_url,
         )
     if args.invites:
         invites_parser.log_invitations(
