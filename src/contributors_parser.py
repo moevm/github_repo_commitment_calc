@@ -65,6 +65,9 @@ def get_contributors_stats(client: IRepositoryAPI, repository: Repository) -> di
     for commit in commits:
         contributor = commit.author
 
+        if not contributor:
+            continue
+
         if contributor.login not in contributors_stats:
             contributors_stats[contributor.login] = {
                 'total_commits': 0,
