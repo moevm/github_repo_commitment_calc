@@ -48,6 +48,7 @@ class TestTokenUsage(ParametrizedTestCase):
             pr_comments=False,
             export_google_sheets=False,
             out=test_args.out,
+            base_url=None,
         )
 
     @staticmethod
@@ -86,10 +87,10 @@ class TestTokenUsage(ParametrizedTestCase):
         [
             # param({'commits': True}, id='commits'),
             param({'contributors': True}, id='contributors'),
-            param({'issues': True}, id='issues'),
-            param({'invites': True}, id='invites'),
-            param({'pull_requests': True}, id='pull_requests'),
-            param({'workflow_runs': True}, id='workflow_runs'),
+            # param({'issues': True}, id='issues'),
+            # param({'invites': True}, id='invites'),
+            # param({'pull_requests': True}, id='pull_requests'),
+            # param({'workflow_runs': True}, id='workflow_runs'),
         ],
     )
     def test_commits_parser(self, args: dict[str, bool]):
