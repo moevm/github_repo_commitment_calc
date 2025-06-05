@@ -87,6 +87,7 @@ class GitHubRepoAPI(IRepositoryAPI):
         return [
             Issue(
                 _id=i.number,
+                number=i.number,
                 title=i.title,
                 state=i.state,
                 created_at=i.created_at,
