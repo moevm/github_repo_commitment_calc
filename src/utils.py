@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 from functools import wraps
 import traceback
+import re
 
 import pytz
 
@@ -96,3 +97,21 @@ def log_exceptions(default_return=None, message="", print_stacktrace=True):
                 return default_return
         return wrapper
     return decorator
+
+def validate_and_normalize_cell(cell: str):
+    """
+    Проверка на соответствие строки формату ячейки Google Sheets:
+        - Идут буквы, потому идут цифры
+        - Буквы латинские
+        - Буквы в верхнем регистре (нижний регистр не вызывает ошибку -- принудительно переводится в верхний в return)
+    """
+    if not re.match(r'^[A-Za-z]+\d+$', cell):
+        raise ValueError(f"Invalid cell format: '{cell}'. Must be letters followed by digits (e.g., 'A1', 'B3').")
+
+    letters = re.findall(r'[A-Za-z]+', cell)[0]
+    numbers = re.findall(r'\d+', cell)[0]
+
+    if not re.match(r'^[A-Za-z]+$', letters):
+        raise ValueError(f"Cell contains non-latin characters: '{letters}'. Only Latin letters allowed.")
+
+    return letters.upper() + numbers
