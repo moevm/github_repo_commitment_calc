@@ -4,7 +4,7 @@ import pygsheets
 INT_MASS = [{"one": 1, "two": 2, "what?": 3}]
 
 
-def write_data_to_table(csv_path, google_token, table_id, sheet_id):
+def write_data_to_table(csv_path, google_token, table_id, sheet_id, start_cell="A1"):
     if google_token and sheet_id and table_id:
         gc = pygsheets.authorize(service_file=google_token)
         sh = gc.open_by_key(table_id)
@@ -25,4 +25,4 @@ def write_data_to_table(csv_path, google_token, table_id, sheet_id):
     wk_content.clear()
 
     # Запись новых данных
-    wk_content.set_dataframe(df, 'A1', copy_head=True)
+    wk_content.set_dataframe(df, start_cell, copy_head=True)

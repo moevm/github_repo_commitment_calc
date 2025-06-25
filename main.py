@@ -1,5 +1,6 @@
 import argparse
 import traceback
+import sys
 
 from src import commits_parser
 from src import contributors_parser
@@ -10,7 +11,7 @@ from src import issues_parser
 from src import pull_requests_parser
 from src import wikipars
 from src import workflow_runs_parser
-from src.utils import parse_time
+from src.utils import parse_time, validate_and_normalize_cell
 
 
 def parse_args():
@@ -34,6 +35,13 @@ def parse_args():
         "--export_google_sheets",
         help="export table to google sheets",
         action="store_true",
+    )
+    parser.add_argument(
+        '--start_cell',
+        type=str,
+        required=False,
+        help='Starting cell for Google Sheets export (e.g., "A1", "B3")',
+        default=None
     )
 
     parser.add_argument(
@@ -162,13 +170,25 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.wikis:
         wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:
-        export_sheets.write_data_to_table(
-            args.out, args.google_token, args.table_id, args.sheet_id
-        )
+        if args.start_cell:
+            export_sheets.write_data_to_table(
+                args.out, args.google_token, args.table_id, args.sheet_id, args.start_cell
+            )
+        else:
+            export_sheets.write_data_to_table(
+                args.out, args.google_token, args.table_id, args.sheet_id
+            )
 
 
 def main():
     args = parse_args()
+
+    if args.start_cell is not None:
+        try:
+            args.start_cell = validate_and_normalize_cell(args.start_cell)
+        except ValueError as e:
+            print(f"Error in start_cell argument: {e}")
+            sys.exit(1)
 
     if args.token:
         tokens = [args.token]
