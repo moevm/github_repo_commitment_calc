@@ -116,4 +116,3 @@ def validate_and_normalize_cell(cell: str):
         raise ValueError(f"Cell contains non-latin characters: '{letters}'. Only Latin letters allowed.")
 
     return letters.upper() + numbers
-
