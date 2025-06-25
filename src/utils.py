@@ -98,6 +98,7 @@ def log_exceptions(default_return=None, message="", print_stacktrace=True):
         return wrapper
     return decorator
 
+
 def validate_and_normalize_cell(cell: str):
     """
     Проверка на соответствие строки формату ячейки Google Sheets:
@@ -115,3 +116,4 @@ def validate_and_normalize_cell(cell: str):
         raise ValueError(f"Cell contains non-latin characters: '{letters}'. Only Latin letters allowed.")
 
     return letters.upper() + numbers
+    
