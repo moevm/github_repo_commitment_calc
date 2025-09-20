@@ -41,7 +41,7 @@ def parse_args():
         type=str,
         required=False,
         help='Starting cell for Google Sheets export (e.g., "A1", "B3")',
-        default=None
+        default="A1"
     )
 
     parser.add_argument(
@@ -122,6 +122,12 @@ def parse_args():
         required=False,
         help='Specify title for a sheet in a document in which data will be printed',
     )
+    parser.add_argument(
+        "--clear_sheet",
+        action="store_true",
+        required=False,
+        help="Specify to clear sheet content before printing",
+    )
     args = parser.parse_args()
 
     if args.export_google_sheets:
@@ -170,25 +176,24 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.wikis:
         wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:
-        if args.start_cell:
-            export_sheets.write_data_to_table(
-                args.out, args.google_token, args.table_id, args.sheet_name, args.start_cell
-            )
-        else:
-            export_sheets.write_data_to_table(
-                args.out, args.google_token, args.table_id, args.sheet_name
-            )
+        export_sheets.write_data_to_table(
+            csv_path=args.out,
+            google_token=args.google_token,
+            table_id=args.table_id,
+            sheet_name=args.sheet_name,
+            start_cell=args.start_cell,
+            clear_content=args.clear_sheet,
+        )
 
 
 def main():
     args = parse_args()
 
-    if args.start_cell is not None:
-        try:
-            args.start_cell = validate_and_normalize_cell(args.start_cell)
-        except ValueError as e:
-            print(f"Error in start_cell argument: {e}")
-            sys.exit(1)
+    try:
+        args.start_cell = validate_and_normalize_cell(args.start_cell)
+    except ValueError as e:
+        print(f"Error in start_cell argument: {e}")
+        sys.exit(1)
 
     if args.token:
         tokens = [args.token]
