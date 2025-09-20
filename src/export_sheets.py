@@ -22,7 +22,7 @@ def write_data_to_table(csv_path, google_token, table_id, sheet_id, start_cell="
         df = pd.DataFrame(INT_MASS)
 
     # Очистка существующих данных
-    wk_content.clear()
+    # wk_content.clear()
 
     # Запись новых данных
     wk_content.set_dataframe(df, start_cell, copy_head=True)
