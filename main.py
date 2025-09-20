@@ -117,7 +117,7 @@ def parse_args():
         help='Specify Google sheet document id (can find in url)',
     )
     parser.add_argument(
-        '--sheet_id',
+        '--sheet_name',
         type=str,
         required=False,
         help='Specify title for a sheet in a document in which data will be printed',
@@ -130,7 +130,7 @@ def parse_args():
                 action.required = True
             if action.dest == 'table_id':
                 action.required = True
-            if action.dest == 'sheet_id':
+            if action.dest == 'sheet_name':
                 action.required = True
     return parser.parse_args()
 
@@ -172,11 +172,11 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.export_google_sheets:
         if args.start_cell:
             export_sheets.write_data_to_table(
-                args.out, args.google_token, args.table_id, args.sheet_id, args.start_cell
+                args.out, args.google_token, args.table_id, args.sheet_name, args.start_cell
             )
         else:
             export_sheets.write_data_to_table(
-                args.out, args.google_token, args.table_id, args.sheet_id
+                args.out, args.google_token, args.table_id, args.sheet_name
             )
 
 
