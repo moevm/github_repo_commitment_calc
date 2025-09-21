@@ -63,7 +63,7 @@ def parse_args():
         help=(
             'Path to the file containing the list of repositories. '
             'Repositories should be separated by a line break. '
-            'Names should be in the format <organization or owner>/<name> '
+            'Names must be in the format <organization or owner>/<name> '
         ),
     )
     parser.add_argument(
