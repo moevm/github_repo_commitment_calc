@@ -36,10 +36,10 @@ def get_tokens_from_file(tokens_path: str) -> list[str]:
 def get_repos_from_file(repos_path: str) -> list[str]:
     with open(repos_path, 'r') as file:
         list_repos = [x for x in file.read().split('\n') if x]
+    pattern = re.compile(r'[0-9A-Za-z-_\.]+/[0-9A-Za-z-_\.]+')
     for repo in list_repos:
-        pattern = r'[0-9A-Za-z-_\.]+/[0-9A-Za-z-_\.]+'
-        if not re.fullmatch(pattern, repo):
-            print('Names must be in the format <organization or owner>/<name>')
+        if not pattern.fullmatch(repo):
+            logging.error('Repository name must be in the format <organization or owner>/<name>')
             exit(1)
 
     return list_repos
