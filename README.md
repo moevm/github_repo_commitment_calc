@@ -20,6 +20,13 @@ docker build -t checking_repo .
 docker run -v $(pwd)/output:/app/output checking_repo [--invites] [--commites] [--etc...] -t <insert_token> -l <insert_list> -o ./output/res.csv
 ```
 
+## Как создать токен:
+1. Заходим в настройки профиля github
+2. Листаем вниз и выбираем пункт Developer settings
+3. Нажимаем на вкладку Personal access tokens, в выпадающем списке выбираем Tokens(classic)
+4. Нажимаем на кнопку Generate new token, в выпадающем окне выбираем Generate new token(classic)
+5. Мы попадаем в настройки токена. Вписываем название токена, выбираем длительность действия токена, ставим галочки на нужные вам права, например - (Repo, workflow, user)
+6. Нажимаем Generate token, сохраняем код токена и пользуемся.
 
 ## Запуск приложения:
 1. Логирование commits
