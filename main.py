@@ -22,7 +22,7 @@ def parse_args():
         "-p", "--pull_requests", help="log pull requests", action="store_true"
     )
     parser.add_argument(
-        "--qraphql", help="use qraphql for requesting data (work only with --pull_requests) ", action="store_true"
+        "--graphql", help="use graphql for requesting data (work only with --pull_requests) ", action="store_true"
     )
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
@@ -153,9 +153,9 @@ def run(args, binded_repos, repos_for_wiki=None):
             binded_repos, args.out, start, finish, args.branch, args.forks_include
         )
     if args.pull_requests:
-        if args.qraphql:
+        if args.graphql:
             pull_requests_parser.log_pull_requests_by_graphql(
-                repo=binded_repos,
+                binded_repos=binded_repos,
                 csv_name=args.out
             )
         else:

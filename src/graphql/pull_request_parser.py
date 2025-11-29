@@ -112,11 +112,12 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
         if "errors" in graphql_data:
             raise Exception(f"GraphQL errors: {graphql_data['errors']}")
 
+        repo_data = graphql_data["data"]["repository"]
+
         page_info = repo_data["pullRequests"]["pageInfo"]
         has_next_page = page_info["hasNextPage"]
         after_cursor = page_info["endCursor"]
 
-        repo_data = graphql_data["data"]["repository"]
         prs = repo_data["pullRequests"]["nodes"]
 
         processed_count += len(prs)
