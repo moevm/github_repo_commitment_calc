@@ -105,12 +105,18 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
         )
 
         if response.status_code != 200:
-            raise Exception(f"Query failed: {response.status_code} - {response.text}")
+            logger.log_error(f"GraphQL request failed: {response.status_code} - {response.text}")
+            logger.log_to_stdout(f"Sleep to {100*TIMEDELTA} and retry")
+            sleep(100*TIMEDELTA)
+            continue
 
         graphql_data = response.json()
 
         if "errors" in graphql_data:
-            raise Exception(f"GraphQL errors: {graphql_data['errors']}")
+            logger.log_error(f"GraphQL errors: {graphql_data['errors']}")
+            logger.log_to_stdout(f"Sleep to {100*TIMEDELTA} and retry")
+            sleep(100*TIMEDELTA)
+            continue
 
         repo_data = graphql_data["data"]["repository"]
 
