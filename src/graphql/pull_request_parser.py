@@ -179,7 +179,6 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
             pr_info = asdict(pr_data)
             logger.log_to_csv(csv_name, list(pr_info.keys()), pr_info)
             logger.log_to_stdout(pr_info)
-        sleep(TIMEDELTA)
 
 
 def log_pull_requests_by_graphql(
@@ -194,4 +193,4 @@ def log_pull_requests_by_graphql(
         log_repositories_pr_by_graphql(
             owner=repo.owner.login, repo_name=repo.name, csv_name=csv_name, token=token
         )
-        sleep(TIMEDELTA)
+        sleep(100*TIMEDELTA)
