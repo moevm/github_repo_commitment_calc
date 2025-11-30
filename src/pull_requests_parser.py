@@ -11,35 +11,8 @@ from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from src.git_logger import get_assignee_story
 from src.interface_wrapper import IRepositoryAPI, Repository
 from src.utils import logger
-
-
-@dataclass(kw_only=True, frozen=True)
-class PullRequestData:
-    repository_name: str = ''
-    title: str = ''
-    id: int = 0
-    state: str = ''
-    commit_into: str = ''
-    commit_from: str = ''
-    created_at: str = ''
-    creator_name: str = ''
-    creator_login: str = ''
-    creator_email: str = ''
-    changed_files: str = ''
-    comment_body: str = ''
-    comment_created_at: str = ''
-    comment_author_name: str = ''
-    comment_author_login: str = ''
-    comment_author_email: str = ''
-    merger_name: str | None = None
-    merger_login: str | None = None
-    merger_email: str | None = None
-    source_branch: str = ''
-    target_branch: str = ''
-    assignee_story: str = ''
-    related_issues: str = ''
-    labels: str = ''
-    milestone: str = ''
+from src.graphql.pull_request_parser import log_pull_requests_by_graphql    # for using in main.py
+from src.repo_dataclasses import PullRequestData
 
 
 def get_related_issues(pull_request_number, repo_owner, repo_name, token):
@@ -104,6 +77,9 @@ def nvl(val):
 
 def get_info(obj, attr):
     return EMPTY_FIELD if obj is None else getattr(obj, attr)
+
+
+# -----------GithubAPI block--------------
 
 
 def log_repositories_pr(
