@@ -34,7 +34,8 @@ class GitHubRepoAPI(IRepositoryAPI):
         return client
 
     def get_user_data(self, user) -> User:
-        return User(
+        try:
+            user = User(
             login=user.login,
             username=user.name,
             email=user.email,  # always None
@@ -44,6 +45,18 @@ class GitHubRepoAPI(IRepositoryAPI):
             bio=user.bio,
             site_admin=user.site_admin,
             _id=user.id,
+        )
+        except:
+            return User(
+            login="",
+            username="",
+            email="",  # always None
+            html_url="",
+            node_id="",
+            type="",
+            bio="",
+            site_admin=False,
+            _id=-1,
         )
 
     def get_commit_data(self, commit, files=False) -> Commit:
