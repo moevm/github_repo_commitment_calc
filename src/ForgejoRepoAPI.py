@@ -271,7 +271,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
     @log_exceptions(default_return=[], message="Failed to get_all_data_from_pages")
     def get_all_data_from_pages(self, method, *method_args, **kw_method_args):
         all_data = []
-        page_index = 0
+        page_index = 1
         data = method(*method_args, page=page_index, **kw_method_args)
         while data:
             page_index += 1
