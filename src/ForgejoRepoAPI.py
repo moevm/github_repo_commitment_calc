@@ -119,7 +119,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
     @log_exceptions(default_return=[], message="Failed to get pull requests from Forgejo")
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
-        pulls = self.get_all_data_from_pages(self.client.repository.repo_list_pull_requests, repo.owner.login, repo.name)
+        pulls = self.get_all_data_from_pages(self.client.repository.repo_list_pull_requests,
+                                             repo.owner.login, repo.name)
         return [
             PullRequest(
                 _id=p.number,

@@ -1,5 +1,5 @@
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from datetime import datetime
 from time import sleep
 from typing import Generator
@@ -11,7 +11,6 @@ from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from src.git_logger import get_assignee_story
 from src.interface_wrapper import IRepositoryAPI, Repository
 from src.utils import logger
-from src.graphql.pull_request_parser import log_pull_requests_by_graphql    # for using in main.py
 from src.repo_dataclasses import PullRequestData
 
 

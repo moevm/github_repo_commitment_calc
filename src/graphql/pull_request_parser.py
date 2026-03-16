@@ -19,18 +19,19 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
     query GetPRData($owner: String!, $repo: String!, $first: Int!, $after: String) {
         repository(owner: $owner, name: $repo) {
             nameWithOwner
-            pullRequests(first: $first, after: $after, states: [OPEN, CLOSED, MERGED], orderBy: {field: CREATED_AT, direction: DESC}) {
+            pullRequests(first: $first, after: $after, states: [OPEN, CLOSED, MERGED],
+                            orderBy: {field: CREATED_AT, direction: DESC}) {
                 totalCount
-                pageInfo {		
-                    hasNextPage		
-                    endCursor		
+                pageInfo {
+                    hasNextPage
+                    endCursor
                 }
                 nodes {
                     title
                     number
                     state
                     createdAt
-                
+
                     author {
                         login
                         ... on User {
@@ -38,7 +39,7 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
                         email
                         }
                     }
-                
+
                     baseRef {
                         name
                         target {
@@ -52,11 +53,11 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
                         oid
                         }
                     }
-                
+
                     changedFiles
                     additions
                     deletions
-                
+
                     mergedAt
                     mergedBy {
                         login
@@ -65,14 +66,14 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
                         email
                         }
                     }
-                    
+
                     assignees(first: 10) {
                         nodes {
                         login
                         name
                         }
                     }
-                    
+
                     labels(first: 20) {
                         nodes {
                         name
