@@ -67,9 +67,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
     @log_exceptions(default_return=[], message="Failed to get commits from Forgejo")
     def get_commits(self, repo: Repository, files: bool = True) -> list[Commit]:
-        commits = self.client.repository.repo_get_all_commits(
-            repo.owner.login, repo.name
-        )
+        commits = self.get_all_data_from_pages(self.client.repository.repo_get_all_commits, repo.owner.login, repo.name)
         return [
             Commit(
                 _id=c.sha,
@@ -121,9 +119,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
 
     @log_exceptions(default_return=[], message="Failed to get pull requests from Forgejo")
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
-        pulls = self.client.repository.repo_list_pull_requests(
-            repo.owner.login, repo.name
-        )
+        pulls = self.get_all_data_from_pages(self.client.repository.repo_list_pull_requests, repo.owner.login, repo.name)
         return [
             PullRequest(
                 _id=p.number,
@@ -171,6 +167,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
                 author=contributor,
                 date=commit.timestamp,
                 files=files,
+                additions=None,  # TODO
+                deletions=None,  # TODO
             )
 
             result.append(Branch(name=branch.name, last_commit=commit_obj))
@@ -268,6 +266,17 @@ class ForgejoRepoAPI(IRepositoryAPI):
                     )
                 )
         return invites
+
+    @log_exceptions(default_return=[], message="Failed to get_all_data_from_pages")
+    def get_all_data_from_pages(self, method, *method_args, **kw_method_args):
+        all_data = []
+        page_index = 0
+        data = method(*method_args, page=page_index, **kw_method_args)
+        while data:
+            page_index += 1
+            all_data += data
+            data = method(*method_args, page=page_index, **kw_method_args)
+        return all_data
 
     def get_rate_limiting(self) -> tuple[int, int]:
         return sys.maxsize, sys.maxsize
