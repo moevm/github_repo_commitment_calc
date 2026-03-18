@@ -28,3 +28,4 @@ class PullRequestData:
     related_issues: str = ''
     labels: str = ''
     milestone: str = ''
+    merged: bool = False

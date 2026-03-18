@@ -119,6 +119,7 @@ def log_repositories_pr(
             merger_name=pull.merged_by.username if pull.merged_by else None,
             merger_login=pull.merged_by.login if pull.merged_by else None,
             merger_email=pull.merged_by.email if pull.merged_by else None,
+            merged=pull.merged,
             source_branch=pull.head_ref,
             target_branch=pull.base_ref,
             assignee_story=get_assignee_story(pull, client, token, repository),
