@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, time
+from dataclasses import asdict
+from datetime import datetime
 from time import sleep
 from typing import Generator
 
@@ -33,7 +33,6 @@ def _parse_iso_to_tz(dt_str: str, tz_name: str) -> datetime:
 
 
 def build_branches_query() -> Query:
-    """Список веток (refs/heads/*)."""
     return Query(
         name="GetBranches",
         variables={"owner": "String!", "repo": "String!", "first": "Int!", "after": "String"},
@@ -62,10 +61,6 @@ def build_branches_query() -> Query:
 
 
 def build_commits_history_query() -> Query:
-    """
-    Коммиты по конкретной ветке через ref.target...Commit.history
-    Пагинация идёт по history.pageInfo.endCursor
-    """
     return Query(
         name="GetCommitsByBranch",
         variables={
@@ -74,6 +69,8 @@ def build_commits_history_query() -> Query:
             "refName": "String!",
             "first": "Int!",
             "after": "String",
+            "since": "GitTimestamp",
+            "until": "GitTimestamp",
         },
         fields=[
             Field(
@@ -94,7 +91,12 @@ def build_commits_history_query() -> Query:
                                         fields=[
                                             Field(
                                                 "history",
-                                                args={"first": "$first", "after": "$after"},
+                                                args={
+                                                    "first": "$first",
+                                                    "after": "$after",
+                                                    "since": "$since",
+                                                    "until": "$until",
+                                                },
                                                 fields=[
                                                     "totalCount",
                                                     Field("pageInfo", fields=["hasNextPage", "endCursor"]),
@@ -156,8 +158,8 @@ def _get_branches_by_graphql(owner: str, repo_name: str, token: str, first_n: in
         after_cursor = page_info.get("endCursor")
 
         nodes = refs_block.get("nodes") or []
-        for n in nodes:
-            name = n.get("name")
+        for node in nodes:
+            name = node.get("name")
             if name:
                 branches.append(name)
 
@@ -171,8 +173,8 @@ def log_repository_commits_by_graphql(
     repo_name: str,
     token: str,
     csv_name: str,
-    start: datetime | str,
-    finish: datetime | str,
+    start: datetime,
+    finish: datetime,
     branch: str | None,
     commits_first_n: int = 100,
 ) -> None:
@@ -196,7 +198,6 @@ def log_repository_commits_by_graphql(
 
         has_next_page = True
         after_cursor: str | None = None
-        processed = 0
 
         while has_next_page:
             ref_name = f"refs/heads/{br}"
@@ -209,6 +210,8 @@ def log_repository_commits_by_graphql(
                         "refName": ref_name,
                         "first": commits_first_n,
                         "after": after_cursor,
+                        "since": start.astimezone(pytz.UTC).isoformat(),
+                        "until": finish.astimezone(pytz.UTC).isoformat(),
                     },
                     token=token,
                 )
@@ -220,7 +223,6 @@ def log_repository_commits_by_graphql(
 
             repo_data = data.get("repository") or {}
             ref_data = repo_data.get("ref") or {}
-
             if not ref_data:
                 logger.log_error(f"Ref not found or no access: {ref_name}")
                 break
@@ -233,22 +235,19 @@ def log_repository_commits_by_graphql(
             after_cursor = page_info.get("endCursor")
 
             nodes = history.get("nodes") or []
-            processed += len(nodes)
-
-            for c in nodes:
-                committed_at_str = c.get("committedDate") or ""
+            for commit in nodes:
+                committed_at_str = commit.get("committedDate") or ""
                 committed_local = _parse_iso_to_tz(committed_at_str, TIMEZONE)
 
                 if committed_local < start or committed_local > finish:
                     continue
 
-                author = c.get("author") or {}
+                author = commit.get("author") or {}
                 user = author.get("user") or {}
 
-                changed_files_value = EMPTY_FIELD 
-                if c.get("changedFiles") is not None:
-                    changed_files_value = str(c.get("changedFiles")) 
-
+                changed_files_value = EMPTY_FIELD
+                if commit.get("changedFiles") is not None:
+                    changed_files_value = str(commit.get("changedFiles"))
                 changed_files_value = (changed_files_value or "")[:GOOGLE_MAX_CELL_LEN]
 
                 commit_data = CommitData(
@@ -258,16 +257,15 @@ def log_repository_commits_by_graphql(
                     author_email=_nvl(user.get("email") or author.get("email")),
                     date_and_time=committed_local.isoformat(),
                     changed_files=changed_files_value,
-                    commit_id=c.get("oid") or "",
+                    commit_id=commit.get("oid") or "",
                     branch=br,
-                    additions=str(c.get("additions") or ""),
-                    deletions=str(c.get("deletions") or ""),
+                    additions=str(commit.get("additions") or ""),
+                    deletions=str(commit.get("deletions") or ""),
                 )
 
                 info = asdict(commit_data)
                 logger.log_to_csv(csv_name, list(info.keys()), info)
                 logger.log_to_stdout(info)
-
                 sleep(TIMEDELTA)
 
         sleep(TIMEDELTA)
@@ -276,22 +274,29 @@ def log_repository_commits_by_graphql(
 def log_commits_by_graphql(
     binded_repos: Generator[tuple[IRepositoryAPI, Repository, str], None, None],
     csv_name: str,
-    start: datetime | str,
-    finish: datetime | str,
+    start: datetime,
+    finish: datetime,
     branch: str | None,
+    forks_include: bool = False,
 ) -> None:
     info = asdict(CommitData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for _, repo, token in binded_repos:
-        logger.log_title(repo.name)
-        log_repository_commits_by_graphql(
-            owner=repo.owner.login,
-            repo_name=repo.name,
-            token=token,
-            csv_name=csv_name,
-            start=start,
-            finish=finish,
-            branch=branch,
-        )
-        sleep(100 * TIMEDELTA)
+    for client, repo, token in binded_repos:
+        repositories = [repo]
+        if forks_include:
+            repositories.extend(client.get_forks(repo))
+
+        for current_repo in repositories:
+            title = current_repo.name if current_repo._id == repo._id else f"FORKED: {current_repo.name}"
+            logger.log_title(title)
+            log_repository_commits_by_graphql(
+                owner=current_repo.owner.login,
+                repo_name=current_repo.name,
+                token=token,
+                csv_name=csv_name,
+                start=start,
+                finish=finish,
+                branch=branch,
+            )
+            sleep(100 * TIMEDELTA)

@@ -13,6 +13,11 @@ from src import wikipars
 from src import workflow_runs_parser
 from src.utils import parse_time, validate_and_normalize_cell
 
+from src.graphql.parser import commits_parser as graphql_commits_parser
+from src.graphql.parser import contributors_parser as graphql_contributors_parser
+from src.graphql.parser import issues_parser as graphql_issues_parser
+from src.graphql.parser import pull_request_parser as graphql_pull_request_parser
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,7 +27,7 @@ def parse_args():
         "-p", "--pull_requests", help="log pull requests", action="store_true"
     )
     parser.add_argument(
-        "--graphql", help="use graphql for requesting data (work only with --pull_requests) ", action="store_true"
+        "--graphql", help="use graphql for requesting data where graphql parsers are implemented", action="store_true",
     )
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
@@ -149,14 +154,29 @@ def run(args, binded_repos, repos_for_wiki=None):
     finish = parse_time(args.finish.split('-'))
 
     if args.commits:
-        commits_parser.log_commits(
-            binded_repos, args.out, start, finish, args.branch, args.forks_include
-        )
+        if args.graphql:
+            graphql_commits_parser.log_commits_by_graphql(
+                binded_repos=binded_repos,
+                csv_name=args.out,
+                start=start,
+                finish=finish,
+                branch=args.branch,
+                forks_include=args.forks_include,
+            )
+        else:
+            commits_parser.log_commits(
+                binded_repos, args.out, start, finish, args.branch, args.forks_include
+            )
+
     if args.pull_requests:
         if args.graphql:
-            pull_requests_parser.log_pull_requests_by_graphql(
+            graphql_pull_request_parser.log_pull_requests_by_graphql(
                 binded_repos=binded_repos,
-                csv_name=args.out
+                csv_name=args.out,
+                start=start,
+                finish=finish,
+                forks_include=args.forks_include,
+                pr_comments=args.pr_comments,
             )
         else:
             pull_requests_parser.log_pull_requests(
@@ -168,16 +188,40 @@ def run(args, binded_repos, repos_for_wiki=None):
                 args.pr_comments,
             )
     if args.issues:
-        issues_parser.log_issues(
-            binded_repos, args.out, start, finish, args.forks_include, args.base_url,
-        )
+        if args.graphql:
+            graphql_issues_parser.log_issues_by_graphql(
+                binded_repos=binded_repos,
+                csv_name=args.out,
+                start=start,
+                finish=finish,
+                forks_include=args.forks_include,
+            )
+        else:
+            issues_parser.log_issues(
+                binded_repos,
+                args.out,
+                start,
+                finish,
+                args.forks_include,
+                args.base_url,
+            )
+
     if args.invites:
         invites_parser.log_invitations(
             binded_repos,
             args.out,
         )
     if args.contributors:
-        contributors_parser.log_contributors(binded_repos, args.out, args.forks_include)
+        if args.graphql:
+            graphql_contributors_parser.log_contributors_by_graphql(
+                binded_repos=binded_repos,
+                csv_name=args.out,
+            )
+        else:
+            contributors_parser.log_contributors(
+                binded_repos, args.out, args.forks_include
+            )
+
     if args.workflow_runs:
         workflow_runs_parser.log_workflow_runs(
             binded_repos, args.out, args.forks_include

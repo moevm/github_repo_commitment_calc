@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from datetime import datetime
 from time import sleep
 from typing import Generator
@@ -33,10 +33,16 @@ def _parse_iso_to_tz(dt_str: str, tz_name: str) -> datetime:
 
 
 def build_issues_query() -> Query:
-    """Список issues по репозиторию (пагинация)."""
     return Query(
         name="GetIssues",
-        variables={"owner": "String!", "repo": "String!", "first": "Int!", "after": "String"},
+        variables={
+            "owner": "String!",
+            "repo": "String!",
+            "first": "Int!",
+            "after": "String",
+            "since": "DateTime",
+            "timelineFirst": "Int!",
+        },
         fields=[
             Field(
                 "repository",
@@ -50,6 +56,7 @@ def build_issues_query() -> Query:
                             "after": "$after",
                             "orderBy": {"field": "CREATED_AT", "direction": "DESC"},
                             "states": ["OPEN", "CLOSED"],
+                            "filterBy": {"since": "$since"},
                         },
                         fields=[
                             "totalCount",
@@ -73,8 +80,8 @@ def build_issues_query() -> Query:
                                     Field(
                                         "timelineItems",
                                         args={
-                                            "last": 1,
-                                            "itemTypes": ["CLOSED_EVENT"],
+                                            "first": "$timelineFirst",
+                                            "itemTypes": ["CLOSED_EVENT", "CONNECTED_EVENT", "CROSS_REFERENCED_EVENT"],
                                         },
                                         fields=[
                                             Field(
@@ -92,20 +99,35 @@ def build_issues_query() -> Query:
                                                                 ],
                                                             ),
                                                         ],
-                                                    )
+                                                    ),
+                                                    InlineFragment(
+                                                        "ConnectedEvent",
+                                                        fields=[
+                                                            Field(
+                                                                "subject",
+                                                                fields=[
+                                                                    InlineFragment("PullRequest", fields=["url"]),
+                                                                ],
+                                                            )
+                                                        ],
+                                                    ),
+                                                    InlineFragment(
+                                                        "CrossReferencedEvent",
+                                                        fields=[
+                                                            Field(
+                                                                "source",
+                                                                fields=[
+                                                                    InlineFragment("PullRequest", fields=["url"]),
+                                                                ],
+                                                            )
+                                                        ],
+                                                    ),
                                                 ],
                                             )
                                         ],
                                     ),
-                                    Field(
-                                        "labels",
-                                        args={"first": 50},
-                                        fields=[Field("nodes", fields=["name"])],
-                                    ),
-                                    Field(
-                                        "milestone",
-                                        fields=["title"],
-                                    ),
+                                    Field("labels", args={"first": 50}, fields=[Field("nodes", fields=["name"])]),
+                                    Field("milestone", fields=["title"]),
                                 ],
                             ),
                         ],
@@ -117,7 +139,6 @@ def build_issues_query() -> Query:
 
 
 def build_issue_comments_query() -> Query:
-    """Комментарии к конкретному issue (пагинация)."""
     return Query(
         name="GetIssueComments",
         variables={
@@ -166,109 +187,18 @@ def build_issue_comments_query() -> Query:
     )
 
 
-def build_issue_connected_prs_query() -> Query:
-    """Связанные PR через timelineItems (CONNECTED_EVENT / CROSS_REFERENCED_EVENT)."""
-    return Query(
-        name="GetIssueConnectedPRs",
-        variables={"owner": "String!", "repo": "String!", "number": "Int!", "first": "Int!"},
-        fields=[
-            Field(
-                "repository",
-                args={"owner": "$owner", "name": "$repo"},
-                fields=[
-                    Field(
-                        "issue",
-                        args={"number": "$number"},
-                        fields=[
-                            Field(
-                                "timelineItems",
-                                args={
-                                    "first": "$first",
-                                    "itemTypes": ["CONNECTED_EVENT", "CROSS_REFERENCED_EVENT"],
-                                },
-                                fields=[
-                                    "filteredCount",
-                                    Field(
-                                        "nodes",
-                                        fields=[
-                                            InlineFragment(
-                                                "ConnectedEvent",
-                                                fields=[
-                                                    Field(
-                                                        "subject",
-                                                        fields=[
-                                                            InlineFragment(
-                                                                "PullRequest",
-                                                                fields=["url"],
-                                                            )
-                                                        ],
-                                                    )
-                                                ],
-                                            ),
-                                            InlineFragment(
-                                                "CrossReferencedEvent",
-                                                fields=[
-                                                    Field(
-                                                        "source",
-                                                        fields=[
-                                                            InlineFragment(
-                                                                "PullRequest",
-                                                                fields=["url"],
-                                                            )
-                                                        ],
-                                                    )
-                                                ],
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                            )
-                        ],
-                    )
-                ],
-            )
-        ],
-    )
-
-
-def _get_connected_pulls_by_graphql(
-    owner: str,
-    repo_name: str,
-    token: str,
-    issue_number: int,
-    first_n: int = 50,
-) -> str:
-    query = build_issue_connected_prs_query()
-
-    try:
-        data = query.execute(
-            variables={
-                "owner": owner,
-                "repo": repo_name,
-                "number": issue_number,
-                "first": first_n,
-            },
-            token=token,
-        )
-    except RuntimeError as exc:
-        logger.log_error(f"GraphQL connected PRs failed for issue #{issue_number}: {exc}")
-        return EMPTY_FIELD
-
-    issue = (data.get("repository") or {}).get("issue") or {}
-    timeline = issue.get("timelineItems") or {}
-    nodes = timeline.get("nodes") or []
-
+def _extract_connected_prs(timeline_nodes: list[dict]) -> str:
     urls: list[str] = []
-    for node in nodes:
+    for node in timeline_nodes:
         subject = node.get("subject") or {}
         pr_url = subject.get("url")
         if pr_url and pr_url not in urls:
             urls.append(pr_url)
 
         source = node.get("source") or {}
-        pr_url2 = source.get("url")
-        if pr_url2 and pr_url2 not in urls:
-            urls.append(pr_url2)
+        pr_url = source.get("url")
+        if pr_url and pr_url not in urls:
+            urls.append(pr_url)
 
     return ";".join(urls) if urls else EMPTY_FIELD
 
@@ -311,16 +241,16 @@ def _log_issue_and_comments_by_graphql(
         after_cursor = page_info.get("endCursor")
 
         nodes = comments_block.get("nodes") or []
-        for c in nodes:
+        for comment in nodes:
             wrote_any = True
-            author = c.get("author") or {}
+            author = comment.get("author") or {}
 
             row = IssueData(
                 **(
-                    asdict(issue_data) |
-                    dict(
-                        comment_body=c.get("body") or "",
-                        comment_created_at=c.get("createdAt") or "",
+                    asdict(issue_data)
+                    | dict(
+                        comment_body=comment.get("body") or "",
+                        comment_created_at=comment.get("createdAt") or "",
                         comment_author_name=_nvl(author.get("name")),
                         comment_author_login=_nvl(author.get("login")),
                         comment_author_email=_nvl(author.get("email")),
@@ -330,7 +260,6 @@ def _log_issue_and_comments_by_graphql(
             row_dict = asdict(row)
             logger.log_to_csv(csv_name, list(row_dict.keys()), row_dict)
             logger.log_to_stdout(row_dict)
-
             sleep(TIMEDELTA)
 
     if not wrote_any:
@@ -347,13 +276,13 @@ def log_repository_issues_by_graphql(
     start: datetime,
     finish: datetime,
     first_n: int = 50,
+    timeline_first_n: int = 50,
 ) -> None:
     query = build_issues_query()
 
     has_next_page = True
     after_cursor: str | None = None
     processed_count = 0
-
     tz = pytz.timezone(TIMEZONE)
 
     while has_next_page:
@@ -362,6 +291,8 @@ def log_repository_issues_by_graphql(
             "repo": repo_name,
             "first": first_n,
             "after": after_cursor,
+            "since": start.astimezone(pytz.UTC).isoformat(),
+            "timelineFirst": timeline_first_n,
         }
 
         try:
@@ -380,52 +311,41 @@ def log_repository_issues_by_graphql(
         after_cursor = page_info["endCursor"]
 
         nodes = issues_block["nodes"] or []
-
         processed_count += len(nodes)
-        logger.log_to_stdout(
-            f"Processing issues {processed_count} / {issues_block['totalCount']}"
-        )
+        logger.log_to_stdout(f"Processing issues {processed_count} / {issues_block['totalCount']}")
 
-        for it in nodes:
-            created_at_str = it.get("createdAt") or ""
+        for issue in nodes:
+            created_at_str = issue.get("createdAt") or ""
             created_local = _parse_iso_to_tz(created_at_str, TIMEZONE)
 
             if created_local < start.astimezone(tz) or created_local > finish.astimezone(tz):
                 continue
 
-            author = it.get("author") or {}
+            author = issue.get("author") or {}
 
             closer = {}
-            timeline_nodes = ((it.get("timelineItems") or {}).get("nodes") or [])
-            if timeline_nodes:
-                closed_event = timeline_nodes[0] or {}
-                closer = closed_event.get("actor") or {}
+            timeline_nodes = ((issue.get("timelineItems") or {}).get("nodes") or [])
+            for node in timeline_nodes:
+                if node.get("actor"):
+                    closer = node.get("actor") or {}
+                    break
 
-            labels_nodes = (it.get("labels") or {}).get("nodes") or []
-            labels_str = ";".join(
-                lbl.get("name") for lbl in labels_nodes if lbl.get("name")
-            ) or EMPTY_FIELD
-
-            milestone = (it.get("milestone") or {}).get("title") or EMPTY_FIELD
-
-            connected_prs = _get_connected_pulls_by_graphql(
-                owner=owner,
-                repo_name=repo_name,
-                token=token,
-                issue_number=int(it["number"]),
-            )
+            labels_nodes = (issue.get("labels") or {}).get("nodes") or []
+            labels_str = ";".join(lbl.get("name") for lbl in labels_nodes if lbl.get("name")) or EMPTY_FIELD
+            milestone = (issue.get("milestone") or {}).get("title") or EMPTY_FIELD
+            connected_prs = _extract_connected_prs(timeline_nodes)
 
             issue_data = IssueData(
                 repository_name=repo_data["nameWithOwner"],
-                number=int(it["number"]),
-                title=it.get("title") or "",
-                state=str(it.get("state") or "").lower(),
-                task=it.get("body") or "",
+                number=int(issue["number"]),
+                title=issue.get("title") or "",
+                state=str(issue.get("state") or "").lower(),
+                task=issue.get("body") or "",
                 created_at=created_at_str,
                 creator_name=_nvl(author.get("name")),
                 creator_login=_nvl(author.get("login")),
                 creator_email=_nvl(author.get("email")),
-                closed_at=it.get("closedAt"),
+                closed_at=issue.get("closedAt"),
                 closer_name=closer.get("name"),
                 closer_login=closer.get("login"),
                 closer_email=closer.get("email"),
@@ -442,7 +362,6 @@ def log_repository_issues_by_graphql(
                 csv_name=csv_name,
                 issue_data=issue_data,
             )
-
             sleep(TIMEDELTA)
 
 
@@ -451,18 +370,25 @@ def log_issues_by_graphql(
     csv_name: str,
     start: datetime,
     finish: datetime,
+    forks_include: bool = False,
 ) -> None:
     info = asdict(IssueData())
     logger.log_to_csv(csv_name, list(info.keys()))
 
-    for _, repo, token in binded_repos:
-        logger.log_title(repo.name)
-        log_repository_issues_by_graphql(
-            owner=repo.owner.login,
-            repo_name=repo.name,
-            token=token,
-            csv_name=csv_name,
-            start=start,
-            finish=finish,
-        )
-        sleep(100 * TIMEDELTA)
+    for client, repo, token in binded_repos:
+        repositories = [repo]
+        if forks_include:
+            repositories.extend(client.get_forks(repo))
+
+        for current_repo in repositories:
+            title = current_repo.name if current_repo._id == repo._id else f"FORKED: {current_repo.name}"
+            logger.log_title(title)
+            log_repository_issues_by_graphql(
+                owner=current_repo.owner.login,
+                repo_name=current_repo.name,
+                token=token,
+                csv_name=csv_name,
+                start=start,
+                finish=finish,
+            )
+            sleep(100 * TIMEDELTA)
