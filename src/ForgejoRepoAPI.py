@@ -251,7 +251,7 @@ class ForgejoRepoAPI(IRepositoryAPI):
                 comments.extend(self.client.issue.get_comments(*pr_data))
             if pull_request.review_comments:
                 # get all PR reviews
-                pr_reviewes = self.client.repository.repo_list_pull_reviews(*pr_data)
+                pr_reviewes = self.get_all_data_from_pages(self.client.repository.repo_list_pull_reviews, *pr_data)
                 for review in pr_reviewes:
                     comments.extend(
                         self.client.repository.repo_get_pull_review_comments(
