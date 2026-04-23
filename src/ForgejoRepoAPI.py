@@ -132,14 +132,22 @@ class ForgejoRepoAPI(IRepositoryAPI):
                 base_label=p.base.ref,
                 head_ref=p.head.ref,
                 base_ref=p.base.ref,
-                merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
-                files=[],  # TODO если возможно
-                issue_url=None,  # TODO если возможно
+                merged_by=self.get_user_data(self.get_pull_request(repo, p.number).merged_by) if p.merged else None,
+                # TODO: merged_by always empty in result of repo_list_pull_requests
+                # (but merged and merged_at are usable)
+                merged=p.merged,
+                files=[],   # TODO нужен отдельный запрос на /repos/{owner}/{repo}/pulls/{index}/files,
+                # иначе есть только кол-во измененных файлов в changed_files
+                issue_url=None,  # TODO если возможно - пока не нашел
                 labels=[label.name for label in p.labels] if p.labels else [],
                 milestone=p.milestone.title if p.milestone else None,
             )
             for p in pulls
         ]
+
+    @log_exceptions(default_return={}, message="Failed to get pull request data from Forgejo")
+    def get_pull_request(self, repo: Repository, pr_index: int) -> PullRequest:
+        return self.client.repository.repo_get_pull_request(owner=repo.owner.login, repo=repo.name, index=pr_index)
 
     @log_exceptions(default_return=[], message="Failed to get branches from Forgejo")
     def get_branches(self, repo: Repository) -> list[Branch]:
@@ -235,7 +243,11 @@ class ForgejoRepoAPI(IRepositoryAPI):
         elif isinstance(obj, PullRequest):
             comments = self.client.repository.repo_get_pull_review_comments(
                 repo.owner.login, repo.name, obj._id, 100000
-            )  # нет id комментария
+            )
+            # нет id комментария - сейчас не работает, т.к. требуется ID ревью - нужно сначала получить \
+            # список ревью /repos/{owner}/{repo}/pulls/{index}/reviews
+            # TODO: нужны отдельные запросы для получения комментариев и комментариев ревью #163, \
+            # в основной сущности PullRequest есть поля "comments": int, "review_comments": int
             result = [
                 Comment(
                     body=c.body,

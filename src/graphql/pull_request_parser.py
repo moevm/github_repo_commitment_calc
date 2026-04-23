@@ -175,6 +175,7 @@ def log_repositories_pr_by_graphql(owner, repo_name, token, csv_name, first_n=10
                     if pr["mergedBy"] and "email" in pr["mergedBy"]
                     else None
                 ),
+                merged=pr["mergedBy"] and "name" in pr["mergedBy"],  # TODO: refactor?
                 source_branch=pr["headRef"]["name"] if pr["headRef"] else None,
                 target_branch=pr["baseRef"]["name"] if pr["baseRef"] else None,
                 assignee_story=None,

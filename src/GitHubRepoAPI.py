@@ -116,6 +116,7 @@ class GitHubRepoAPI(IRepositoryAPI):
                 head_ref=p.head.ref,
                 base_ref=p.base.ref,
                 merged_by=self.get_user_data(p.merged_by) if p.merged_by else None,
+                merged=bool(p.merged_by),
                 files=[file.filename for file in p.get_files()],
                 issue_url=p.issue_url,
                 labels=[label.name for label in p.labels],

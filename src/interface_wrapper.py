@@ -85,6 +85,7 @@ class PullRequest:
     head_ref: str
     base_ref: str
     merged_by: User
+    merged: bool
     files: list[str]
     issue_url: str
     labels: list[str]
