@@ -90,6 +90,8 @@ class PullRequest:
     issue_url: str
     labels: list[str]
     milestone: str
+    comments: int = 0
+    review_comments: int = 0
 
 
 @dataclass
