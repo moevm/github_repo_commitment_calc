@@ -25,7 +25,7 @@ from src.interface_wrapper import (
 
 
 class ForgejoRepoAPI(IRepositoryAPI):
-    def __init__(self, client):
+    def __init__(self, client: PyforgejoApi):
         self.client = client
 
     def get_user_data(self, user) -> User:
@@ -141,6 +141,8 @@ class ForgejoRepoAPI(IRepositoryAPI):
                 issue_url=None,  # TODO если возможно - пока не нашел
                 labels=[label.name for label in p.labels] if p.labels else [],
                 milestone=p.milestone.title if p.milestone else None,
+                comments=p.comments,
+                review_comments=p.review_comments
             )
             for p in pulls
         ]
@@ -241,13 +243,21 @@ class ForgejoRepoAPI(IRepositoryAPI):
             ]
 
         elif isinstance(obj, PullRequest):
-            comments = self.client.repository.repo_get_pull_review_comments(
-                repo.owner.login, repo.name, obj._id, 100000
-            )
-            # нет id комментария - сейчас не работает, т.к. требуется ID ревью - нужно сначала получить \
-            # список ревью /repos/{owner}/{repo}/pulls/{index}/reviews
-            # TODO: нужны отдельные запросы для получения комментариев и комментариев ревью #163, \
-            # в основной сущности PullRequest есть поля "comments": int, "review_comments": int
+            pull_request = obj
+            comments = []
+            pr_data = (repo.owner.login, repo.name, pull_request._id)
+            if pull_request.comments:
+                # simple comments in PR
+                comments.extend(self.client.issue.get_comments(*pr_data))
+            if pull_request.review_comments:
+                # get all PR reviews
+                pr_reviewes = self.get_all_data_from_pages(self.client.repository.repo_list_pull_reviews, *pr_data)
+                for review in pr_reviewes:
+                    comments.extend(
+                        self.client.repository.repo_get_pull_review_comments(
+                            *pr_data, review.id
+                        )
+                    )
             result = [
                 Comment(
                     body=c.body,

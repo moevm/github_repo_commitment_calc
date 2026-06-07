@@ -75,7 +75,7 @@ def log_commits(
     start: datetime,
     finish: datetime,
     branch: str,
-    fork_flag: bool,
+    fork_flag: bool = False,
 ):
     info = asdict(CommitData())
     logger.log_to_csv(csv_name, list(info.keys()))
