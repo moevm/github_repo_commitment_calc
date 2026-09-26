@@ -123,7 +123,7 @@ def log_repositories_pr(
             merged=pull.merged,
             source_branch=pull.head_ref,
             target_branch=pull.base_ref,
-            assignee_story=get_assignee_story(pull, client, token, repository),
+            assignee_story=None, #get_assignee_story(pull, client, token, repository),
             related_issues=(
                 get_related_issues(pull._id, repository.owner, repository.name, token)
                 if pull.issue_url is not None

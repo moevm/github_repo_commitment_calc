@@ -41,13 +41,11 @@ class Clients:
         self.clients = []
         self.token_map = {}
 
-        if api_type != APITypes.forgejo_db:
-            
-            for auth in auth_data:
-                client, token = RepositoryFactory.create_api(api_type, auth)
-                if client:
-                    self.clients.append(client)
-                    self.token_map[client] = token
+        for auth in auth_data:
+            client, token = RepositoryFactory.create_api(api_type, auth)
+            if client:
+                self.clients.append(client)
+                self.token_map[client] = token
 
         if not self.clients:
             raise Exception(f"No clients after login: type={api_type}")

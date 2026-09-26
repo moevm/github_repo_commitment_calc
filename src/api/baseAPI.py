@@ -97,37 +97,46 @@ class RepositoryFactory:
     @staticmethod
     def create_api(api_type: APITypes, auth_data: dict) -> IRepositoryAPI:
         from src.api.forgejo.ForgejoRepoAPI import ForgejoRepoAPI
+        from src.api.forgejo.ForgejoRepoDB import ForgejoDBClient, ForgejoRepoDB
         from src.api.github.GitHubRepoAPI import GitHubRepoAPI
 
         errors = []
 
+        base_url = auth_data.get("base_url")
+        token = auth_data.get("token")
+        if auth_data.get("base_url") and api_type != APITypes.forgejo_db:
+            api_type = APITypes.forgejo   # legacy code for backward compability
+
         match api_type:
             case APITypes.github:
                 try:
-                    token = auth_data.get("token")
                     client = GitHubRepoAPI(Github(auth=Auth.Token(token)))
                     if client.client:
-                        return client
+                        return client, token
                 except Exception as e:
                     errors.append(
                         f"GitHub login failed: {e}. Token: {str(token)[:4]}..."
                     )
-            case APITypes.forgejo | auth_data.get("base_url"):  # legacy code for backward compability
+            case APITypes.forgejo:
                 try:
-                    base_url = auth_data.get("base_url")
-                    token = auth_data.get("token")
                     return ForgejoRepoAPI(
                         PyforgejoApi(api_key=token, base_url=base_url)
-                    )
+                    ), token
                 except Exception as e:
                     errors.append(
                         f"Forgejo login failed: {e}. Base url: {base_url}. Token: {str(token)[:4]}..."
                     )
             case APITypes.forgejo_db:
-                ...
+                try:
+                    token = auth_data.get("token")
+                    return ForgejoRepoDB(ForgejoDBClient({'base_url': base_url, 'FORGEJO_DB_PASSWORD': token})), None
+                except Exception as e:
+                    errors.append(
+                        f"Forgejo DB login failed: {e}. Base url: {base_url}. Token: {str(token)[:4]}..."
+                    )
 
         if errors:
             logging.error(" / ".join(errors))
             logging.error("\n".join(traceback.format_stack()))
 
-        return None
+        return None, None
