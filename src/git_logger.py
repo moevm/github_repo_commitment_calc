@@ -5,7 +5,7 @@ import traceback
 
 import requests
 
-from src.GitHubRepoAPI import GitHubRepoAPI
+from src.api.github.GitHubRepoAPI import GitHubRepoAPI
 from src.interface_wrapper import (
     RepositoryFactory,
     IRepositoryAPI

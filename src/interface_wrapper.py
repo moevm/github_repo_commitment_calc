@@ -205,8 +205,8 @@ class IRepositoryAPI(ABC):
 class RepositoryFactory:
     @staticmethod
     def create_api(token: str, base_url: str | None = None) -> IRepositoryAPI:
-        from src.ForgejoRepoAPI import ForgejoRepoAPI
-        from src.GitHubRepoAPI import GitHubRepoAPI
+        from src.api.forgejo.ForgejoRepoAPI import ForgejoRepoAPI
+        from src.api.github.GitHubRepoAPI import GitHubRepoAPI
 
         errors = []
 
