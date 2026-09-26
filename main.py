@@ -1,4 +1,5 @@
 import argparse
+import logging
 import traceback
 import sys
 
@@ -11,12 +12,13 @@ from src import issues_parser
 from src import pull_requests_parser
 from src import wikipars
 from src import workflow_runs_parser
-from src.utils import parse_time, validate_and_normalize_cell
+from src.utils import logger, parse_time, validate_and_normalize_cell
 from src.api.utils import APITypes
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true", help="Enable detailed console logs")
     parser.add_argument(
         "--source",
         choices=list(APITypes),
@@ -25,6 +27,18 @@ def parse_args():
         help="Data source: github API (by default), forgejo API, forgejo db (direct access)",
     )
     parser.add_argument("--invites", help="print pending invites", action="store_true")
+    parser.add_argument(
+        "--forgejo-db-organization",
+        help="Forgejo DB only: exact repository owner login (case-insensitive)",
+    )
+    parser.add_argument(
+        "--forgejo-db-repo-name-contains",
+        nargs="+",
+        help=(
+            "Forgejo DB only: select repositories whose name contains any of "
+            "these literal substrings (case-insensitive), e.g. 2026 2027"
+        ),
+    )
     parser.add_argument("-c", "--commits", help="log commits", action="store_true")
     parser.add_argument(
         "-p", "--pull_requests", help="log pull requests", action="store_true"
@@ -199,6 +213,7 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.wikis:
         wikipars.wikiparser(repos_for_wiki, args.download_repos, args.out)
     if args.export_google_sheets:
+        logger.close_csv_files()
         export_sheets.write_data_to_table(
             csv_path=args.out,
             google_token=args.google_token,
@@ -211,11 +226,12 @@ def run(args, binded_repos, repos_for_wiki=None):
 
 def main():
     args = parse_args()
+    logging.getLogger().setLevel(logging.DEBUG if args.debug else logging.WARNING)
 
     try:
         args.start_cell = validate_and_normalize_cell(args.start_cell)
     except ValueError as e:
-        print(f"Error in start_cell argument: {e}")
+        logging.error("Error in start_cell argument: %s", e)
         sys.exit(1)
 
     if args.token:
@@ -228,15 +244,28 @@ def main():
     try:
         clients = git_logger.Clients(
             api_type=args.source,
-            auth_data=[dict(token=token, base_url=args.base_url) for token in tokens],
+            auth_data=[
+                dict(
+                    token=token,
+                    base_url=args.base_url,
+                    forgejo_db=dict(
+                        repo_name_contains=args.forgejo_db_repo_name_contains,
+                        organization=args.forgejo_db_organization,
+                    ),
+                )
+                for token in tokens
+            ],
         )
         binded_repos = git_logger.get_next_binded_repo(clients, repositories)
     except Exception as e:
-        print(f"Failed to initialize any clients: {e}")
-        print(traceback.format_exc())
+        logging.error("Failed to initialize any clients: %s", e)
+        logging.debug(traceback.format_exc())
         return
 
-    run(args, binded_repos, repositories)
+    try:
+        run(args, binded_repos, repositories)
+    finally:
+        logger.close_csv_files()
 
 
 if __name__ == "__main__":

@@ -10,11 +10,8 @@ SELECT
     to_timestamp(i.created_unix)                                    AS created_at,
     pr.head_branch                                                  AS source_branch,
     pr.base_branch                                                  AS target_branch,
-    pr.head_branch                                                  AS head_ref,
-    pr.base_branch                                                  AS base_ref,
     pr.has_merged                                                   AS merged,
     i.num_comments                                                  AS num_comments,
-    0                                                               AS review_comments,
     m.name                                                          AS milestone,
 
     -- Автор PR (для User)
@@ -40,42 +37,7 @@ SELECT
     -- Лейблы
     (SELECT string_agg(l.name, ', ' ORDER BY l.name)
        FROM issue_label il JOIN label l ON il.label_id = l.id
-      WHERE il.issue_id = i.id)                                     AS labels,
-
-    -- Назначенные исполнители
-    (SELECT string_agg(a.name, ', ' ORDER BY a.name)
-       FROM issue_assignees ia JOIN "user" a ON ia.assignee_id = a.id
-      WHERE ia.issue_id = i.id)                                     AS assignee_story,
-
-    -- Связанные issues
-    (SELECT string_agg(related_id::text, ', ' ORDER BY related_id)
-       FROM (
-           SELECT dependency_id AS related_id
-             FROM issue_dependency WHERE issue_id = i.id
-           UNION
-           SELECT issue_id AS related_id
-             FROM issue_dependency WHERE dependency_id = i.id
-       ) AS rel)                                                    AS related_issues,
-
-    -- Комментарии (только пользовательские, type = 0)
-    (SELECT string_agg(c.content, E'\n---\n' ORDER BY c.created_unix)
-       FROM comment c
-      WHERE c.issue_id = i.id AND c.type = 0)                       AS comment_body,
-    (SELECT string_agg(to_timestamp(c.created_unix)::text, ', ' ORDER BY c.created_unix)
-       FROM comment c
-      WHERE c.issue_id = i.id AND c.type = 0)                       AS comment_created_at,
-    (SELECT string_agg(cu.name, ', ' ORDER BY c.created_unix)
-       FROM comment c JOIN "user" cu ON c.poster_id = cu.id
-      WHERE c.issue_id = i.id AND c.type = 0)                       AS comment_author_name,
-    (SELECT string_agg(cu.lower_name, ', ' ORDER BY c.created_unix)
-       FROM comment c JOIN "user" cu ON c.poster_id = cu.id
-      WHERE c.issue_id = i.id AND c.type = 0)                       AS comment_author_login,
-    (SELECT string_agg(cu.email, ', ' ORDER BY c.created_unix)
-       FROM comment c JOIN "user" cu ON c.poster_id = cu.id
-      WHERE c.issue_id = i.id AND c.type = 0)                       AS comment_author_email,
-
-    -- Изменённые файлы (через БД недоступны)
-    NULL::text                                                      AS changed_files
+      WHERE il.issue_id = i.id)                                     AS labels
 
 FROM pull_request pr
 INNER JOIN issue i         ON pr.issue_id     = i.id
@@ -83,6 +45,15 @@ INNER JOIN repository r    ON pr.base_repo_id = r.id
 INNER JOIN "user" creator  ON i.poster_id     = creator.id
 LEFT  JOIN "user" merger   ON pr.merger_id    = merger.id
 LEFT  JOIN milestone m     ON i.milestone_id  = m.id
+WHERE (
+    %(repo_name_contains)s::text[] IS NULL
+    OR EXISTS (
+        SELECT 1
+        FROM unnest(%(repo_name_contains)s::text[]) AS filter(name_part)
+        WHERE strpos(lower(r.name), lower(filter.name_part)) > 0
+    )
+)
+AND (%(organization)s IS NULL OR lower(r.owner_name) = lower(%(organization)s))
 ORDER BY i.created_unix DESC;
 """
 

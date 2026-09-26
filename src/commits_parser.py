@@ -39,7 +39,7 @@ def log_repository_commits(
             branches.append(branch)
 
     for branch in branches:
-        print(f'Processing branch {branch}')
+        logger.log_to_stdout(f'Processing branch {branch}')
         commits = client.get_commits(repository)
         for commit in commits:
             if (

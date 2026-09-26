@@ -129,7 +129,11 @@ class RepositoryFactory:
             case APITypes.forgejo_db:
                 try:
                     token = auth_data.get("token")
-                    return ForgejoRepoDB(ForgejoDBClient({'base_url': base_url, 'FORGEJO_DB_PASSWORD': token})), None
+                    return ForgejoRepoDB(ForgejoDBClient({
+                        'base_url': base_url,
+                        'FORGEJO_DB_PASSWORD': token,
+                        **auth_data.get('forgejo_db', {}),
+                    })), None
                 except Exception as e:
                     errors.append(
                         f"Forgejo DB login failed: {e}. Base url: {base_url}. Token: {str(token)[:4]}..."

@@ -1,8 +1,10 @@
 import csv
+import atexit
 from datetime import datetime
 from functools import wraps
 import traceback
 import re
+from time import monotonic
 
 import pytz
 
@@ -17,7 +19,22 @@ logging.basicConfig(
 
 
 class logger:
-    # TODO: отключение вывода в stdout
+    _csv_files = {}
+    _csv_progress = {}
+    _progress_log = logging.getLogger("export.progress")
+    _progress_log.setLevel(logging.INFO)
+
+    @staticmethod
+    def close_csv_files():
+        try:
+            for file, _, _ in logger._csv_files.values():
+                file.close()
+            for csv_name, (count, _) in logger._csv_progress.items():
+                logger._progress_log.info("CSV %s: total %d rows written", csv_name, count)
+        finally:
+            logger._csv_files.clear()
+            logger._csv_progress.clear()
+
     @staticmethod
     def log_title(title: str, title_len: int = TITLE_LEN):
         final_len = max(
@@ -25,31 +42,45 @@ class logger:
         )
 
         formatted = f"{SIDE_WHITE_SPACES * ' ' + title + ' ' * SIDE_WHITE_SPACES:=^{final_len}}"
-        logging.info(formatted)
+        logging.debug(formatted)
 
     @staticmethod
     def log_to_csv(csv_name: str, field_names: tuple[str], row: dict | None = None):
-        field_names = list(map(lambda x: x.replace('_', ' '), field_names))
-        if row is not None:
-            row = {k.replace('_', ' '): v for k, v in row.items()}
-        if isinstance(row, dict):
-            with open(csv_name, 'a', encoding='utf-8', newline='') as file:
-                writer = csv.DictWriter(file, fieldnames=field_names)
-                writer.writerow(row)
-        elif row is None:
-            with open(csv_name, 'w', encoding='utf-8', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(field_names)
-        else:
+        if row is not None and not isinstance(row, dict):
             raise TypeError(f"row has type {type(row)} but must be [ dict | None ]")
+        field_names = tuple(x.replace('_', ' ') for x in field_names)
+        cached = logger._csv_files.get(csv_name)
+        if row is None or cached is None or cached[2] != field_names:
+            if cached is not None:
+                cached[0].close()
+                del logger._csv_files[csv_name]
+            file = open(csv_name, 'w' if row is None else 'a', encoding='utf-8', newline='')
+            writer = csv.DictWriter(file, fieldnames=field_names)
+            logger._csv_files[csv_name] = file, writer, field_names
+        else:
+            file, writer, _ = cached
+        if row is None:
+            writer.writeheader()
+            logger._csv_progress[csv_name] = (0, monotonic())
+        else:
+            writer.writerow({k.replace('_', ' '): v for k, v in row.items()})
+        file.flush()
+        if row is not None:
+            now = monotonic()
+            count, last_progress = logger._csv_progress.get(csv_name, (0, now))
+            count += 1
+            if now - last_progress >= 5:
+                logger._progress_log.info("CSV %s: %d rows written", csv_name, count)
+                last_progress = now
+            logger._csv_progress[csv_name] = (count, last_progress)
 
     @staticmethod
     def log_to_stdout(info: dict):
-        logging.info(f"{info}")
+        logging.debug("%s", info)
 
     @staticmethod
     def log_sep():
-        logging.info("-" * TITLE_LEN)
+        logging.debug("-" * TITLE_LEN)
 
     @staticmethod
     def log_error(error: str):
@@ -58,6 +89,9 @@ class logger:
     @staticmethod
     def log_warning(warning: str):
         logging.warning(warning)
+
+
+atexit.register(logger.close_csv_files)
 
 
 def parse_time(datetime_str) -> datetime:

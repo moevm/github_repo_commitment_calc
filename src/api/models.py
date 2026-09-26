@@ -88,6 +88,7 @@ class PullRequest:
     milestone: str
     comments: int = 0
     review_comments: int = 0
+    repository_name: str = ""
 
 
 @dataclass
