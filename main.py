@@ -61,7 +61,6 @@ def parse_args():
         "--base_url",
         type=str,
         required=False,
-        default="https://git.moevm.pro/api/v1",
         help="Base URL for Forgejo instance (if using Forgejo)",
     )
 
