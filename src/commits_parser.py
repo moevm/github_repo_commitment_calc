@@ -5,8 +5,9 @@ from typing import Generator
 
 import pytz
 
+from src.api.baseAPI import IRepositoryAPI
 from src.constants import EMPTY_FIELD, GOOGLE_MAX_CELL_LEN, TIMEDELTA, TIMEZONE
-from src.interface_wrapper import IRepositoryAPI, Repository
+from src.api.models import Repository
 from src.utils import logger
 
 

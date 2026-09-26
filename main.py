@@ -12,17 +12,27 @@ from src import pull_requests_parser
 from src import wikipars
 from src import workflow_runs_parser
 from src.utils import parse_time, validate_and_normalize_cell
+from src.api.utils import APITypes
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--source",
+        choices=list(APITypes),
+        default=APITypes.github,
+        required=False,
+        help="Data source: github API (by default), forgejo API, forgejo db (direct access)",
+    )
     parser.add_argument("--invites", help="print pending invites", action="store_true")
     parser.add_argument("-c", "--commits", help="log commits", action="store_true")
     parser.add_argument(
         "-p", "--pull_requests", help="log pull requests", action="store_true"
     )
     parser.add_argument(
-        "--graphql", help="use graphql for requesting data (work only with --pull_requests) ", action="store_true"
+        "--graphql",
+        help="use graphql for requesting data (work only with --pull_requests) ",
+        action="store_true",
     )
     parser.add_argument("-i", "--issues", help="log issues", action="store_true")
     parser.add_argument("-w", "--wikis", help="log wikis", action="store_true")
@@ -40,90 +50,90 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
-        '--start_cell',
+        "--start_cell",
         type=str,
         required=False,
         help='Starting cell for Google Sheets export (e.g., "A1", "B3")',
-        default="A1"
+        default="A1",
     )
 
     parser.add_argument(
-        '--base_url',
+        "--base_url",
         type=str,
         required=False,
-        help='Base URL for Forgejo instance (if using Forgejo)',
+        help="Base URL for Forgejo instance (if using Forgejo)",
     )
 
     token = parser.add_mutually_exclusive_group(required=True)
-    token.add_argument('-t', '--token', type=str, help='account access token')
-    token.add_argument('--tokens', type=str, help='path to your tokens')
+    token.add_argument("-t", "--token", type=str, help="account access token")
+    token.add_argument("--tokens", type=str, help="path to your tokens")
 
     parser.add_argument(
-        '-l',
-        '--list',
+        "-l",
+        "--list",
         type=str,
         required=True,
         help=(
-            'Path to the file containing the list of repositories. '
-            'Repositories should be separated by a line break. '
-            'Names must be in the format <organization or owner>/<name> '
+            "Path to the file containing the list of repositories. "
+            "Repositories should be separated by a line break. "
+            "Names must be in the format <organization or owner>/<name> "
         ),
     )
     parser.add_argument(
         "--download_repos",
         type=str,
         help="path to downloaded repositories",
-        default='./',
+        default="./",
     )
-    parser.add_argument('-o', '--out', type=str, required=True, help='output filename')
+    parser.add_argument("-o", "--out", type=str, required=True, help="output filename")
     parser.add_argument(
         "--pr_comments", help="log comments for PR", action="store_true"
     )
     parser.add_argument(
-        '-s',
-        '--start',
+        "-s",
+        "--start",
         type=str,
         required=False,
-        help='start time',
-        default='2000/01/01-00:00:00',
+        help="start time",
+        default="2000/01/01-00:00:00",
     )
     parser.add_argument(
-        '-f',
-        '--finish',
+        "-f",
+        "--finish",
         type=str,
         required=False,
-        help='finish time',
-        default='2400/01/01-00:00:00',
+        help="finish time",
+        default="2400/01/01-00:00:00",
     )
     parser.add_argument(
-        '-b',
-        '--branch',
+        "-b",
+        "--branch",
         type=str,
         required=False,
         help=(
-            'branch to select commits, '
+            "branch to select commits, "
             'by default use "default" repository branch, '
             'use "all" to get all commits from all branches',
         ),
         default=None,
     )
     parser.add_argument(
-        '--google_token',
+        "--google_token",
         type=str,
         required=False,
-        help='Specify path to google token file',
+        help="Specify path to google token file",
     )
     parser.add_argument(
-        '--table_id',
+        "--table_id",
         type=str,
         required=False,
-        help='Specify Google sheet document id (can find in url)',
+        help="Specify Google sheet document id (can find in url)",
     )
     parser.add_argument(
-        '--sheet_name',
+        "--sheet_name",
         type=str,
         required=False,
-        help='Specify title for a sheet in a document in which data will be printed',
+        help="Specify title for a sheet in a document in which data will be printed",
     )
     parser.add_argument(
         "--clear_sheet",
@@ -135,18 +145,18 @@ def parse_args():
 
     if args.export_google_sheets:
         for action in parser._actions:
-            if action.dest == 'google_token':
+            if action.dest == "google_token":
                 action.required = True
-            if action.dest == 'table_id':
+            if action.dest == "table_id":
                 action.required = True
-            if action.dest == 'sheet_name':
+            if action.dest == "sheet_name":
                 action.required = True
     return parser.parse_args()
 
 
 def run(args, binded_repos, repos_for_wiki=None):
-    start = parse_time(args.start.split('-'))
-    finish = parse_time(args.finish.split('-'))
+    start = parse_time(args.start.split("-"))
+    finish = parse_time(args.finish.split("-"))
 
     if args.commits:
         commits_parser.log_commits(
@@ -155,8 +165,7 @@ def run(args, binded_repos, repos_for_wiki=None):
     if args.pull_requests:
         if args.graphql:
             pull_requests_parser.log_pull_requests_by_graphql(
-                binded_repos=binded_repos,
-                csv_name=args.out
+                binded_repos=binded_repos, csv_name=args.out
             )
         else:
             pull_requests_parser.log_pull_requests(
@@ -169,7 +178,12 @@ def run(args, binded_repos, repos_for_wiki=None):
             )
     if args.issues:
         issues_parser.log_issues(
-            binded_repos, args.out, start, finish, args.forks_include, args.base_url,
+            binded_repos,
+            args.out,
+            start,
+            finish,
+            args.forks_include,
+            args.base_url,
         )
     if args.invites:
         invites_parser.log_invitations(
@@ -212,7 +226,10 @@ def main():
     repositories = git_logger.get_repos_from_file(args.list)
 
     try:
-        clients = git_logger.Clients(tokens, args.base_url)
+        clients = git_logger.Clients(
+            api_type=args.source,
+            auth_data=[dict(token=token, base_url=args.base_url) for token in tokens],
+        )
         binded_repos = git_logger.get_next_binded_repo(clients, repositories)
     except Exception as e:
         print(f"Failed to initialize any clients: {e}")
@@ -222,5 +239,5 @@ def main():
     run(args, binded_repos, repositories)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

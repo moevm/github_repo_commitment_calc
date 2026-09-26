@@ -7,9 +7,10 @@ from typing import Generator
 import pytz
 import requests
 
+from src.api.baseAPI import IRepositoryAPI
 from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from src.git_logger import get_assignee_story
-from src.interface_wrapper import IRepositoryAPI, Repository
+from src.api.models import Repository
 from src.utils import logger
 from src.repo_dataclasses import PullRequestData
 
@@ -105,7 +106,7 @@ def log_repositories_pr(
             continue
 
         pr_data = PullRequestData(
-            repository_name=repository.name,
+            repository_name=pull.repository_name or repository.name,
             title=pull.title,
             id=pull._id,
             state=pull.state,
@@ -122,7 +123,7 @@ def log_repositories_pr(
             merged=pull.merged,
             source_branch=pull.head_ref,
             target_branch=pull.base_ref,
-            assignee_story=get_assignee_story(pull, client, token, repository),
+            assignee_story=None, #get_assignee_story(pull, client, token, repository),
             related_issues=(
                 get_related_issues(pull._id, repository.owner, repository.name, token)
                 if pull.issue_url is not None

@@ -1,22 +1,10 @@
 from github import Github
 
-from src.utils import (
-    log_exceptions,
-)
-from src.interface_wrapper import (
-    Branch,
-    Comment,
-    Commit,
-    Contributor,
-    Invite,
-    IRepositoryAPI,
-    Issue,
-    PullRequest,
-    Repository,
-    User,
-    WikiPage,
-    WorkflowRun,
-)
+from src.api.baseAPI import IRepositoryAPI
+from src.api.models import (Branch, Comment, Commit, Contributor, Invite,
+                            Issue, PullRequest, Repository, User, WikiPage,
+                            WorkflowRun)
+from src.utils import log_exceptions
 
 
 class GitHubRepoAPI(IRepositoryAPI):
@@ -83,7 +71,7 @@ class GitHubRepoAPI(IRepositoryAPI):
 
     @log_exceptions(default_return=[], message="Failed to get issues from GitHub")
     def get_issues(self, repo: Repository) -> list[Issue]:
-        issues = self.client.get_repo(repo._id).get_issues(state='all')
+        issues = self.client.get_repo(repo._id).get_issues(state="all")
         return [
             Issue(
                 _id=i.number,
@@ -101,9 +89,11 @@ class GitHubRepoAPI(IRepositoryAPI):
             for i in issues
         ]
 
-    @log_exceptions(default_return=[], message="Failed to get pull requests from GitHub")
+    @log_exceptions(
+        default_return=[], message="Failed to get pull requests from GitHub"
+    )
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
-        pulls = self.client.get_repo(repo._id).get_pulls(state='all')
+        pulls = self.client.get_repo(repo._id).get_pulls(state="all")
         return [
             PullRequest(
                 _id=p.number,
@@ -139,7 +129,7 @@ class GitHubRepoAPI(IRepositoryAPI):
         return result
 
     def get_wiki_pages(self, repo: Repository) -> list[WikiPage]:
-        raise Exception('not implemented')
+        raise Exception("not implemented")
 
     @log_exceptions(default_return=[], message="Failed to get forks from GitHub")
     def get_forks(self, repo: Repository) -> list[Repository]:
@@ -200,7 +190,9 @@ class GitHubRepoAPI(IRepositoryAPI):
     def get_rate_limiting(self) -> tuple[int, int]:
         return self.client.rate_limiting
 
-    @log_exceptions(default_return=[], message="Failed to get workflow runs from GitHub")
+    @log_exceptions(
+        default_return=[], message="Failed to get workflow runs from GitHub"
+    )
     def get_workflow_runs(self, repo) -> list[WorkflowRun]:
         runs = self.client.get_repo(repo._id).get_workflow_runs()
         return [
@@ -222,14 +214,14 @@ class GitHubRepoAPI(IRepositoryAPI):
         ]
 
     def get_base_url(self) -> str:
-        return 'https://api.github.com'
+        return "https://api.github.com"
 
 
 # Точка входа для тестирования
 if __name__ == "__main__":
     # Создайте клиент GitHub (используйте ваш токен)
     # client = Github("")
-    api = GitHubRepoAPI('client')
+    api = GitHubRepoAPI("client")
 
     # Укажите ваш репозиторий
     repo_name = ""
