@@ -5,10 +5,10 @@ import traceback
 
 import requests
 
+from src.api.baseAPI import IRepositoryAPI
 from src.api.github.GitHubRepoAPI import GitHubRepoAPI
-from src.interface_wrapper import (
-    RepositoryFactory,
-    IRepositoryAPI
+from src.api.baseAPI import (
+    RepositoryFactory
 )
 from src.constants import (
     EMPTY_FIELD,
