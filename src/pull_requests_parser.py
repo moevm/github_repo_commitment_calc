@@ -106,7 +106,7 @@ def log_repositories_pr(
             continue
 
         pr_data = PullRequestData(
-            repository_name=repository.name,
+            repository_name=pull.repository_name or repository.name,
             title=pull.title,
             id=pull._id,
             state=pull.state,

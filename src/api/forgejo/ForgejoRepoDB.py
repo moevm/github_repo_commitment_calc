@@ -1,4 +1,3 @@
-import base64
 import logging
 
 import psycopg2
@@ -7,14 +6,9 @@ import psycopg2
 from src.api.baseAPI import IRepositoryAPI
 from src.api.models import (
     Branch,
-    Comment,
-    Commit,
-    Contributor,
-    Issue,
     PullRequest,
     Repository,
     User,
-    WikiPage,
 )
 from src.utils import log_exceptions
 from src.api.forgejo.sql_queries import GET_FULL_PR_INFO, GET_USER_BY_ID, GET_REPO
@@ -23,11 +17,11 @@ from src.api.forgejo.sql_queries import GET_FULL_PR_INFO, GET_USER_BY_ID, GET_RE
 class ForgejoDBClient:
     def __init__(self, connect_info: dict):
         self.connection_params = dict(
-            host=connect_info.get("FORGEJO_DB_HOST", 'db'),
+            host=connect_info.get("FORGEJO_DB_HOST", "db"),
             port=int(connect_info.get("FORGEJO_DB_PORT", 5432)),
-            dbname=connect_info.get("FORGEJO_DB_NAME", 'forgejo'),
+            dbname=connect_info.get("FORGEJO_DB_NAME", "forgejo"),
             user=connect_info.get("FORGEJO_DB_USER", "forgejo"),
-            password=connect_info.get("FORGEJO_DB_PASSWORD", "moevmforgejopassword"),
+            password=connect_info.get("FORGEJO_DB_PASSWORD", ""),
         )
         self.connection = None
         self.base_url = connect_info.get("base_url")
@@ -47,7 +41,6 @@ class ForgejoDBClient:
                 cur.execute(GET_FULL_PR_INFO)
                 columns = [d[0] for d in cur.description]
                 rows = [dict(zip(columns, r)) for r in cur.fetchall()]
-        logging.error(f"{rows}")
         return [self._row_to_pr(row) for row in rows]
 
     @staticmethod
@@ -60,7 +53,9 @@ class ForgejoDBClient:
         return User(
             _id=uid,
             login=login,
-            username=row.get(f"{prefix}_full_name") or row.get(f"{prefix}_name") or "No name",
+            username=row.get(f"{prefix}_full_name")
+            or row.get(f"{prefix}_name")
+            or "No name",
             email=row.get(f"{prefix}_email") or "",
             html_url=f"{base_url.rstrip('/')}/{login}" if base_url and login else "",
             node_id=str(uid),
@@ -72,11 +67,11 @@ class ForgejoDBClient:
     def _row_to_pr(self, row: dict) -> PullRequest:
         author = self._user_from_row(row, "creator", self.base_url)
         merged_by = (
-            self._user_from_row(row, "merger", self.base_url)
-            if row["merged"] else None
+            self._user_from_row(row, "merger", self.base_url) if row["merged"] else None
         )
 
         return PullRequest(
+            repository_name=row["repository_name"],
             _id=row["number"],
             title=row["title"],
             author=author,
@@ -96,7 +91,8 @@ class ForgejoDBClient:
             review_comments=0,
         )
 
-class ForgejoRepoDB():
+
+class ForgejoRepoDB:  # IRepositoryAPI
     _USER_TYPES = {0: "User", 1: "Organization", 2: "Bot"}
 
     def __init__(self, client: ForgejoDBClient):
@@ -112,7 +108,9 @@ class ForgejoRepoDB():
             login=login,
             username=row.get("full_name") or row.get("name") or "No name",
             email=row.get("email") or "",
-            html_url=f"{self.client.base_url}/{login}" if self.client.base_url else None,
+            html_url=f"{self.client.base_url}/{login}"
+            if self.client.base_url
+            else None,
             node_id=row.get("id"),
             type=self._USER_TYPES.get(row.get("type") or 0, ""),
             bio=row.get("description") or "",
@@ -130,9 +128,13 @@ class ForgejoRepoDB():
                 cols = [d[0] for d in cur.description]
                 return self.get_user_data(dict(zip(cols, row)))
 
-    @log_exceptions(default_return=None, message="Failed to get repository from Forgejo DB")
+    @log_exceptions(
+        default_return=None, message="Failed to get repository from Forgejo DB"
+    )
     def get_repository(self, id: str) -> Repository | None:
-        logging.info(f"{self} doesn't support get_repository (it parses all PR in DB), so returned Repo is Mock")
+        logging.info(
+            f"{self} doesn't support get_repository (it parses all PR in DB), so returned Repo is Mock"
+        )
         with self.client:
             with self.client.connection.cursor() as cur:
                 cur.execute(GET_REPO, (id,))
@@ -143,21 +145,25 @@ class ForgejoRepoDB():
                 cols = [d[0] for d in cur.description]
                 row = dict(zip(cols, row))
 
-        owner = self.get_user_data({
-            "id": row["owner_id"],
-            "name": row["owner_name_user"],
-            "lower_name": row["owner_login"],
-            "full_name": row["owner_full_name"],
-            "email": row["owner_email"],
-            "description": row["owner_description"],
-            "is_admin": row["owner_is_admin"],
-            "type": row["owner_type"],
-        })
+        owner = self.get_user_data(
+            {
+                "id": row["owner_id"],
+                "name": row["owner_name_user"],
+                "lower_name": row["owner_login"],
+                "full_name": row["owner_full_name"],
+                "email": row["owner_email"],
+                "description": row["owner_description"],
+                "is_admin": row["owner_is_admin"],
+                "type": row["owner_type"],
+            }
+        )
 
         return Repository(
             _id=f"{row['owner_name']}/{row['name']}",
             name=row["name"],
-            url=f"{self.client.base_url}/{row['owner_name']}/{row['name']}" if self.client.base_url else None,
+            url=f"{self.client.base_url}/{row['owner_name']}/{row['name']}"
+            if self.client.base_url
+            else None,
             default_branch=Branch(name=row["default_branch"], last_commit=None),
             owner=owner,
         )
@@ -171,6 +177,7 @@ class ForgejoRepoDB():
 
     def get_rate_limiting(self) -> tuple[int, int]:
         import sys
+
         return sys.maxsize, sys.maxsize
 
     def get_base_url(self):
