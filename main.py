@@ -12,10 +12,18 @@ from src import pull_requests_parser
 from src import wikipars
 from src import workflow_runs_parser
 from src.utils import parse_time, validate_and_normalize_cell
+from src.api.utils import APITypes
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--source',
+        choices=list(APITypes),
+        default=APITypes.github,
+        required=False,
+        help='Data source: github API (by default), forgejo API, forgejo db (direct access)'
+    )
     parser.add_argument("--invites", help="print pending invites", action="store_true")
     parser.add_argument("-c", "--commits", help="log commits", action="store_true")
     parser.add_argument(
@@ -51,6 +59,7 @@ def parse_args():
         '--base_url',
         type=str,
         required=False,
+        default="https://git.moevm.pro/api/v1",
         help='Base URL for Forgejo instance (if using Forgejo)',
     )
 
@@ -212,7 +221,7 @@ def main():
     repositories = git_logger.get_repos_from_file(args.list)
 
     try:
-        clients = git_logger.Clients(tokens, args.base_url)
+        clients = git_logger.Clients(api_type=args.source, auth_data=dict(tokens=tokens, base_url=args.base_url))
         binded_repos = git_logger.get_next_binded_repo(clients, repositories)
     except Exception as e:
         print(f"Failed to initialize any clients: {e}")

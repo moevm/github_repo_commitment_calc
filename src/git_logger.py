@@ -10,20 +10,11 @@ from src.api.github.GitHubRepoAPI import GitHubRepoAPI
 from src.api.baseAPI import (
     RepositoryFactory
 )
+from src.api.utils import APITypes
 from src.constants import (
     EMPTY_FIELD,
     TIMEDELTA,
 )
-
-
-def login(token, base_url):
-    try:
-        client = RepositoryFactory.create_api(token, base_url)
-        return client
-    except Exception as e:
-        logging.error(e)
-        logging.error(traceback.format_exc())
-        return None
 
 
 def get_tokens_from_file(tokens_path: str) -> list[str]:
@@ -46,20 +37,20 @@ def get_repos_from_file(repos_path: str) -> list[str]:
 
 
 class Clients:
-    def __init__(self, tokens: list[str], base_url: str | None = None):
+    def __init__(self, api_type: APITypes, auth_data: list[dict]):
         self.clients = []
         self.token_map = {}
 
-        for token in tokens:
-            client = login(token, base_url)
-            if client:
-                self.clients.append(client)
-                self.token_map[client] = token
+        if api_type != APITypes.forgejo_db:
+            
+            for auth in auth_data:
+                client, token = RepositoryFactory.create_api(api_type, auth)
+                if client:
+                    self.clients.append(client)
+                    self.token_map[client] = token
 
         if not self.clients:
-            if base_url:
-                raise Exception("No valid tokens for either GitHub or Forgejo")
-            raise Exception("Make sure that base_url is provided")
+            raise Exception(f"No clients after login: type={api_type}")
 
     def _get_next_client(self) -> tuple[IRepositoryAPI, str]:
         client = None

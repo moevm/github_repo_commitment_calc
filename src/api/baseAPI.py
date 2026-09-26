@@ -3,9 +3,24 @@ from abc import ABC, abstractmethod
 from github import Auth, Github
 from pyforgejo import PyforgejoApi
 
-from src.api.models import (Branch, Comment, Commit, Contributor, Invite,
-                            Issue, PullRequest, Repository, User, WikiPage,
-                            WorkflowRun)
+from src.api.models import (
+    Branch,
+    Comment,
+    Commit,
+    Contributor,
+    Invite,
+    Issue,
+    PullRequest,
+    Repository,
+    User,
+    WikiPage,
+    WorkflowRun,
+)
+
+import logging
+import traceback
+
+from src.api.utils import APITypes
 
 
 # Интерфейс API
@@ -80,23 +95,39 @@ class IRepositoryAPI(ABC):
 
 class RepositoryFactory:
     @staticmethod
-    def create_api(token: str, base_url: str | None = None) -> IRepositoryAPI:
+    def create_api(api_type: APITypes, auth_data: dict) -> IRepositoryAPI:
         from src.api.forgejo.ForgejoRepoAPI import ForgejoRepoAPI
         from src.api.github.GitHubRepoAPI import GitHubRepoAPI
 
         errors = []
 
-        try:
-            client = GitHubRepoAPI(Github(auth=Auth.Token(token)))
-            if client.client:
-                return client
-        except Exception as e:
-            errors.append(f"GitHub login failed: {e}")
+        match api_type:
+            case APITypes.github:
+                try:
+                    token = auth_data.get("token")
+                    client = GitHubRepoAPI(Github(auth=Auth.Token(token)))
+                    if client.client:
+                        return client
+                except Exception as e:
+                    errors.append(
+                        f"GitHub login failed: {e}. Token: {str(token)[:4]}..."
+                    )
+            case APITypes.forgejo | auth_data.get("base_url"):  # legacy code for backward compability
+                try:
+                    base_url = auth_data.get("base_url")
+                    token = auth_data.get("token")
+                    return ForgejoRepoAPI(
+                        PyforgejoApi(api_key=token, base_url=base_url)
+                    )
+                except Exception as e:
+                    errors.append(
+                        f"Forgejo login failed: {e}. Base url: {base_url}. Token: {str(token)[:4]}..."
+                    )
+            case APITypes.forgejo_db:
+                ...
 
-        if base_url:
-            try:
-                return ForgejoRepoAPI(PyforgejoApi(api_key=token, base_url=base_url))
-            except Exception as e:
-                errors.append(f"Forgejo login failed: {e}")
+        if errors:
+            logging.error(" / ".join(errors))
+            logging.error("\n".join(traceback.format_stack()))
 
-        raise Exception(" / ".join(errors))
+        return None
