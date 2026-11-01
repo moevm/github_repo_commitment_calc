@@ -81,8 +81,7 @@ def wikiparser(repositories: list[str], path_drepo: str, csv_name: str):
             data_commit["added lines"] = commit.stats.total["insertions"]
             data_commit["deleted lines"] = commit.stats.total["deletions"]
 
-            for fieldname in data_commit:
-                print(fieldname, data_commit[fieldname], sep=': ')
+            logger.log_to_stdout(data_commit)
 
             logger.log_sep()
             logger.log_to_csv(csv_name, data_commit)

@@ -5,25 +5,16 @@ import traceback
 
 import requests
 
-from src.GitHubRepoAPI import GitHubRepoAPI
-from src.interface_wrapper import (
-    RepositoryFactory,
-    IRepositoryAPI
+from src.api.baseAPI import IRepositoryAPI
+from src.api.github.GitHubRepoAPI import GitHubRepoAPI
+from src.api.baseAPI import (
+    RepositoryFactory
 )
+from src.api.utils import APITypes
 from src.constants import (
     EMPTY_FIELD,
     TIMEDELTA,
 )
-
-
-def login(token, base_url):
-    try:
-        client = RepositoryFactory.create_api(token, base_url)
-        return client
-    except Exception as e:
-        logging.error(e)
-        logging.error(traceback.format_exc())
-        return None
 
 
 def get_tokens_from_file(tokens_path: str) -> list[str]:
@@ -46,20 +37,18 @@ def get_repos_from_file(repos_path: str) -> list[str]:
 
 
 class Clients:
-    def __init__(self, tokens: list[str], base_url: str | None = None):
+    def __init__(self, api_type: APITypes, auth_data: list[dict]):
         self.clients = []
         self.token_map = {}
 
-        for token in tokens:
-            client = login(token, base_url)
+        for auth in auth_data:
+            client, token = RepositoryFactory.create_api(api_type, auth)
             if client:
                 self.clients.append(client)
                 self.token_map[client] = token
 
         if not self.clients:
-            if base_url:
-                raise Exception("No valid tokens for either GitHub or Forgejo")
-            raise Exception("Make sure that base_url is provided")
+            raise Exception(f"No clients after login: type={api_type}")
 
     def _get_next_client(self) -> tuple[IRepositoryAPI, str]:
         client = None
@@ -86,8 +75,7 @@ def get_next_binded_repo(clients: Clients, repositories: list[str]):
             client, token = clients.get_next_client()
             repo = client.get_repository(repo_name)
         except Exception as err:
-            print(f'git_logger.get_next_binded_repo(): error {err}')
-            print(f'git_logger.get_next_binded_repo(): failed to load repository "{repo_name}"')
+            logging.error('Failed to load repository %s: %s', repo_name, err)
         else:
             yield client, repo, token
 

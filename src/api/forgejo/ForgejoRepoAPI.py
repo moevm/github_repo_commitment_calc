@@ -1,27 +1,15 @@
 import base64
-import sys
 import logging
+import sys
 
 import isodate
 from pyforgejo import PyforgejoApi
 
-from src.utils import (
-    log_exceptions,
-)
-from src.interface_wrapper import (
-    Branch,
-    Comment,
-    Commit,
-    Contributor,
-    Invite,
-    IRepositoryAPI,
-    Issue,
-    PullRequest,
-    Repository,
-    User,
-    WikiPage,
-    WorkflowRun
-)
+from src.api.baseAPI import IRepositoryAPI
+from src.api.models import (Branch, Comment, Commit, Contributor, Invite,
+                            Issue, PullRequest, Repository, User, WikiPage,
+                            WorkflowRun)
+from src.utils import log_exceptions
 
 
 class ForgejoRepoAPI(IRepositoryAPI):

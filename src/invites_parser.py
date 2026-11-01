@@ -2,8 +2,9 @@ from dataclasses import asdict, dataclass
 from time import sleep
 from typing import Generator
 
+from src.api.baseAPI import IRepositoryAPI
 from src.constants import TIMEDELTA
-from src.interface_wrapper import IRepositoryAPI, Repository
+from src.api.models import Repository
 from src.utils import logger
 
 
@@ -40,6 +41,6 @@ def log_invitations(
     logger.log_to_csv(csv_name, list(info.keys()))
 
     for client, repo, token in binded_repos:
-        print(client, repo, token)
+        logger.log_to_stdout(str(repo))
         logger.log_title(repo.name)
         log_repository_invitations(client, repo, csv_name)

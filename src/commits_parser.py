@@ -5,8 +5,9 @@ from typing import Generator
 
 import pytz
 
+from src.api.baseAPI import IRepositoryAPI
 from src.constants import EMPTY_FIELD, GOOGLE_MAX_CELL_LEN, TIMEDELTA, TIMEZONE
-from src.interface_wrapper import IRepositoryAPI, Repository
+from src.api.models import Repository
 from src.utils import logger
 
 
@@ -38,7 +39,7 @@ def log_repository_commits(
             branches.append(branch)
 
     for branch in branches:
-        print(f'Processing branch {branch}')
+        logger.log_to_stdout(f'Processing branch {branch}')
         commits = client.get_commits(repository)
         for commit in commits:
             if (

@@ -6,9 +6,10 @@ from typing import Generator
 import pytz
 import requests
 
+from src.api.baseAPI import IRepositoryAPI
 from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
 from src.git_logger import get_assignee_story
-from src.interface_wrapper import IRepositoryAPI, Repository
+from src.api.models import Repository
 from src.utils import logger
 
 
@@ -88,7 +89,7 @@ def get_connected_pulls(
                     connected_prs.add(pr.get("html_url"))
 
         except requests.exceptions.RequestException as e:
-            print(f"[Warning] Failed to fetch connected PRs: {str(e)}")
+            logger.log_warning(f"Failed to fetch connected PRs: {e}")
             return 'Empty field'
 
         return ';'.join(sorted(connected_prs)) if connected_prs else 'Empty field'
