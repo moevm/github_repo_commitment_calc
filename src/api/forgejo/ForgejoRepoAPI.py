@@ -109,35 +109,43 @@ class ForgejoRepoAPI(IRepositoryAPI):
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         pulls = self.get_all_data_from_pages(self.client.repository.repo_list_pull_requests,
                                              repo.owner.login, repo.name)
-        return [
-            PullRequest(
-                _id=p.number,
-                title=p.title,
-                author=self.get_user_data(p.user),
-                state=p.state,
-                created_at=p.created_at,
-                head_label=p.head.ref,
-                base_label=p.base.ref,
-                head_ref=p.head.ref,
-                base_ref=p.base.ref,
-                merged_by=self.get_user_data(self.get_pull_request(repo, p.number).merged_by) if p.merged else None,
-                # TODO: merged_by always empty in result of repo_list_pull_requests
-                # (but merged and merged_at are usable)
-                merged=p.merged,
-                files=[],   # TODO нужен отдельный запрос на /repos/{owner}/{repo}/pulls/{index}/files,
-                # иначе есть только кол-во измененных файлов в changed_files
-                issue_url=None,  # TODO если возможно - пока не нашел
-                labels=[label.name for label in p.labels] if p.labels else [],
-                milestone=p.milestone.title if p.milestone else None,
-                comments=p.comments,
-                review_comments=p.review_comments
-            )
-            for p in pulls
-        ]
+        result = []
+        for p in pulls:
+            pull = self._to_pull_request(p)
+            if p.merged and p.merged_by is None:
+                detail = self.get_pull_request(repo, p.number)
+                pull.merged_by = detail.merged_by if detail else None
+            result.append(pull)
+        return result
 
-    @log_exceptions(default_return={}, message="Failed to get pull request data from Forgejo")
-    def get_pull_request(self, repo: Repository, pr_index: int) -> PullRequest:
-        return self.client.repository.repo_get_pull_request(owner=repo.owner.login, repo=repo.name, index=pr_index)
+    def _to_pull_request(self, p) -> PullRequest:
+        return PullRequest(
+            _id=p.number,
+            title=p.title,
+            author=self.get_user_data(p.user),
+            state=p.state,
+            created_at=p.created_at,
+            head_label=p.head.ref,
+            base_label=p.base.ref,
+            head_ref=p.head.ref,
+            base_ref=p.base.ref,
+            merged_by=self.get_user_data(p.merged_by) if p.merged and p.merged_by else None,
+            merged=p.merged,
+            files=[],   # TODO нужен отдельный запрос на /repos/{owner}/{repo}/pulls/{index}/files,
+            # иначе есть только кол-во измененных файлов в changed_files
+            issue_url=None,  # TODO если возможно - пока не нашел
+            labels=[label.name for label in p.labels] if p.labels else [],
+            milestone=p.milestone.title if p.milestone else None,
+            comments=p.comments,
+            review_comments=p.review_comments
+        )
+
+    @log_exceptions(default_return=None, message="Failed to get pull request data from Forgejo")
+    def get_pull_request(self, repo: Repository, pr_index: int) -> PullRequest | None:
+        pull = self.client.repository.repo_get_pull_request(owner=repo.owner.login, repo=repo.name, index=pr_index)
+        if not pull:
+            raise ValueError(f"Empty response for pull request {pr_index}")
+        return self._to_pull_request(pull)
 
     @log_exceptions(default_return=[], message="Failed to get branches from Forgejo")
     def get_branches(self, repo: Repository) -> list[Branch]:
