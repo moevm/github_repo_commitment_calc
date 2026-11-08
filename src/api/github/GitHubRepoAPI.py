@@ -18,7 +18,7 @@ class GitHubRepoAPI(IRepositoryAPI):
         print_stacktrace=False,
     )
     def _client_validation(client: Github) -> Github | None:
-        client.get_user().login
+        client.get_rate_limit()
         return client
 
     def get_user_data(self, user) -> User:

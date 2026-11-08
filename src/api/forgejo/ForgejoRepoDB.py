@@ -3,7 +3,6 @@ import logging
 import psycopg2
 
 
-from src.api.baseAPI import IRepositoryAPI
 from src.api.models import (
     Branch,
     PullRequest,

@@ -1,7 +1,6 @@
 import re
 from time import sleep
 import logging
-import traceback
 
 import requests
 

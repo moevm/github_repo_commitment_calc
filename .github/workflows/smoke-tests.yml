@@ -8,6 +8,7 @@ on:
 
 jobs:
   smoke-test:
+    permissions: read-all
     strategy:
       fail-fast: false
       matrix:
@@ -37,11 +38,15 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Create list.txt
-      run: echo "thehighestmath/SummerPractice" > list.txt
+      env:
+        TEST_REPOSITORY: ${{ github.repository }}
+      run: echo "$TEST_REPOSITORY" > list.txt
 
     - name: Run test
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
-        python3 main.py ${{ matrix.args }} --token ${{ secrets.TEST_TOKEN_GITHUB }} --list list.txt --out out.csv --branch master
+        python3 main.py ${{ matrix.args }} --token "$GH_TOKEN" --list list.txt --out out.csv --branch master
 
     - name: Check if out.csv exists
       run: ls out.csv
