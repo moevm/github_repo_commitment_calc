@@ -1,12 +1,13 @@
 import re
 from time import sleep
 import logging
-import traceback
 
 import requests
 
 from src.api.baseAPI import IRepositoryAPI
 from src.api.github.GitHubRepoAPI import GitHubRepoAPI
+from src.api.forgejo.ForgejoRepoAPI import ForgejoRepoAPI
+from src.api.forgejo.ForgejoRepoDB import ForgejoRepoDB
 from src.api.baseAPI import (
     RepositoryFactory
 )
@@ -59,7 +60,8 @@ class Clients:
             if remaining > max_remaining_limit:
                 client = c
                 max_remaining_limit = remaining
-            sleep(TIMEDELTA)
+            if not isinstance(c, (ForgejoRepoAPI, ForgejoRepoDB)):
+                sleep(TIMEDELTA)
 
         if client is None:
             raise Exception("No git clients available")

@@ -8,9 +8,9 @@ import pytz
 import requests
 
 from src.api.baseAPI import IRepositoryAPI
+from src.api.forgejo.ForgejoRepoAPI import ForgejoRepoAPI
 from src.api.forgejo.ForgejoRepoDB import ForgejoRepoDB
 from src.constants import EMPTY_FIELD, TIMEDELTA, TIMEZONE
-from src.git_logger import get_assignee_story
 from src.api.models import Repository
 from src.utils import logger
 from src.repo_dataclasses import PullRequestData
@@ -98,7 +98,6 @@ def log_repositories_pr(
     def get_info(obj, attr):
         return EMPTY_FIELD if obj is None else getattr(obj, attr)
 
-    is_forgejo_db = isinstance(client, ForgejoRepoDB)
     pulls = client.get_pull_requests(repository)
     for pull in pulls:
         if (
@@ -125,7 +124,7 @@ def log_repositories_pr(
             merged=pull.merged,
             source_branch=pull.head_ref,
             target_branch=pull.base_ref,
-            assignee_story=None, #get_assignee_story(pull, client, token, repository),
+            assignee_story=None,
             related_issues=(
                 get_related_issues(pull._id, repository.owner, repository.name, token)
                 if pull.issue_url is not None
@@ -164,7 +163,7 @@ def log_repositories_pr(
             logger.log_to_csv(csv_name, list(base_pr_info.keys()), base_pr_info)
             logger.log_to_stdout(base_pr_info)
 
-        if not is_forgejo_db:
+        if not isinstance(client, (ForgejoRepoAPI, ForgejoRepoDB)):
             sleep(TIMEDELTA)
 
 
@@ -197,5 +196,7 @@ def log_pull_requests(
                     finish,
                     log_comments,
                 )
-                sleep(TIMEDELTA)
-        sleep(TIMEDELTA)
+                if not isinstance(client, (ForgejoRepoAPI, ForgejoRepoDB)):
+                    sleep(TIMEDELTA)
+        if not isinstance(client, (ForgejoRepoAPI, ForgejoRepoDB)):
+            sleep(TIMEDELTA)
