@@ -5,12 +5,13 @@ import psycopg2
 
 from src.api.models import (
     Branch,
+    Comment,
     PullRequest,
     Repository,
     User,
 )
 from src.utils import log_exceptions
-from src.api.forgejo.sql_queries import GET_FULL_PR_INFO, GET_USER_BY_ID, GET_REPO
+from src.api.forgejo.sql_queries import GET_FULL_PR_INFO, GET_PR_COMMENTS, GET_USER_BY_ID, GET_REPO
 
 
 class ForgejoDBClient:
@@ -26,6 +27,8 @@ class ForgejoDBClient:
         self.base_url = connect_info.get("base_url")
         self.repo_name_contains = connect_info.get("repo_name_contains") or None
         self.organization = connect_info.get("organization")
+        self._pull_request_keys = {}
+        self._comments = None
 
     def __enter__(self):
         self.connection = psycopg2.connect(**self.connection_params)
@@ -46,7 +49,30 @@ class ForgejoDBClient:
                 )
                 columns = [d[0] for d in cur.description]
                 rows = [dict(zip(columns, r)) for r in cur.fetchall()]
+        self._pull_request_keys = {
+            row["issue_id"]: (row["repository_name"], row["number"]) for row in rows
+        }
+        self._comments = None
         return [self._row_to_pr(row) for row in rows]
+
+    def get_pull_request_comments(self, pull: PullRequest) -> list[Comment]:
+        if self._comments is None:
+            comments = {}
+            if self._pull_request_keys:
+                with self:
+                    with self.connection.cursor() as cur:
+                        cur.execute(GET_PR_COMMENTS, (list(self._pull_request_keys),))
+                        columns = [d[0] for d in cur.description]
+                        for values in cur.fetchall():
+                            row = dict(zip(columns, values))
+                            key = self._pull_request_keys[row["issue_id"]]
+                            comments.setdefault(key, []).append(Comment(
+                                body=row["body"],
+                                created_at=row["created_at"],
+                                author=self._user_from_row(row, "author", self.base_url),
+                            ))
+            self._comments = comments
+        return self._comments.get((pull.repository_name, pull._id), [])
 
     @staticmethod
     def _user_from_row(row: dict, prefix: str, base_url: str = "") -> User | None:
@@ -179,6 +205,9 @@ class ForgejoRepoDB:  # IRepositoryAPI
     def get_pull_requests(self, repo: Repository) -> list[PullRequest]:
         logging.info(f"{self} doesn't support per-repo - it returns all PR in DB")
         return self.client.get_all_pull_requests()
+
+    def get_comments(self, repo: Repository, obj: PullRequest) -> list[Comment]:
+        return self.client.get_pull_request_comments(obj)
 
     def get_rate_limiting(self) -> tuple[int, int]:
         import sys

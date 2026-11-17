@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import pygsheets
 
@@ -26,4 +28,5 @@ def write_data_to_table(csv_path, google_token, table_id, sheet_name, start_cell
         wk_content.clear()
 
     # Запись новых данных
-    wk_content.set_dataframe(df=df, start=start_cell, copy_head=True, nan='')
+    wk_content.set_dataframe(df=df, start=start_cell, copy_head=True, nan='', extend=True)
+    logging.getLogger("export.progress").info("Google Sheets: %d rows uploaded", len(df))

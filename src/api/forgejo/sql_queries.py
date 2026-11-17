@@ -1,5 +1,6 @@
 GET_FULL_PR_INFO = """
 SELECT
+    i.id                                                            AS issue_id,
     -- Репозиторий
     r.owner_name || '/' || r.name                                   AS repository_name,
 
@@ -60,6 +61,31 @@ ORDER BY i.created_unix DESC;
 GET_USER_BY_ID = """
 SELECT id, name, lower_name, full_name, email, description, is_admin, type
   FROM "user" WHERE id = %s;
+"""
+
+GET_PR_COMMENTS = """
+SELECT
+    c.issue_id,
+    c.content AS body,
+    to_timestamp(c.created_unix) AS created_at,
+    COALESCE(u.id, -1) AS author_id,
+    COALESCE(u.name, 'Ghost') AS author_name,
+    COALESCE(u.lower_name, 'ghost') AS author_login,
+    u.full_name AS author_full_name,
+    u.email AS author_email,
+    u.description AS author_bio,
+    u.is_admin AS author_is_admin,
+    u.type AS author_type
+FROM comment c
+LEFT JOIN "user" u ON c.poster_id = u.id
+LEFT JOIN review rv ON c.review_id = rv.id AND rv.issue_id = c.issue_id
+WHERE c.issue_id = ANY(%s)
+  AND (
+      c.type = 0
+      OR (c.type IN (21, 22) AND rv.type IN (1, 2, 3)
+          AND (c.type = 21 OR btrim(c.content) <> ''))
+  )
+ORDER BY c.issue_id, c.created_unix, c.id;
 """
 
 GET_REPO = """
